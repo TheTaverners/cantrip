@@ -11,7 +11,7 @@ The repository is a monorepo. Each deployable component lives under `apps/`:
 - macOS
 - [Homebrew](https://brew.sh)
 
-`make setup` installs everything else: [Volta](https://volta.sh) through the [Brewfile](Brewfile), then Node (pinned by Volta) and the client's npm dependencies. If you have never used Volta before, run `volta setup` once after the first `make setup` and restart your shell, so that `node` and `npm` resolve to Volta's pinned versions.
+`make setup` installs everything else: [Volta](https://volta.sh) and [actionlint](https://github.com/rhysd/actionlint) through the [Brewfile](Brewfile), then Node (pinned by Volta) and the client's npm dependencies. If you have never used Volta before, run `volta setup` once after the first `make setup` and restart your shell, so that `node` and `npm` resolve to Volta's pinned versions.
 
 ## Setup
 
@@ -26,10 +26,13 @@ make setup
 | `make setup` | Install machine tools (Homebrew bundle) and npm dependencies. |
 | `make dev`   | Start the client dev server on http://localhost:5173.         |
 | `make build` | Build the optimised production bundle in `apps/client/dist`.  |
+| `make lint-workflows` | Lint the GitHub Actions workflows with actionlint. |
 | `make check` | Run every check CI runs, except browser tests.                |
 
 Run `make` (or `make help`) to list the targets.
 
 ## Continuous integration
 
-GitHub Actions runs on every pull request and every push to `main`. The `client` job runs only when client files, CI configuration or the root `Makefile` change. The `ci-ok` job always runs and is the single status to require.
+GitHub Actions runs on every pull request and every push to `main`. The `client` job runs only when client files, CI configuration or the root `Makefile` change. The `repo` job runs on every change: it lints the workflows with actionlint and, on pull requests, checks that the PR title is a [Conventional Commit](https://www.conventionalcommits.org) (`<type>(<optional scope>): <description>`, with the same types as the commit-msg hook), because squash merges turn the title into the commit on `main`. The `ci-ok` job always runs and is the single status to require.
+
+Every action is pinned by full commit SHA with the version in a trailing comment (Docker actions: `docker://image:<version>@sha256:<digest>`). Keep it that way when adding or updating an action.

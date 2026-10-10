@@ -13,7 +13,10 @@ Run from the repo root. Each Make target delegates to an npm script in `apps/cli
 - `make setup`: `brew bundle` (Brewfile), then `npm ci` in the client.
 - `make dev`: Vite dev server on http://localhost:5173 (`npm run dev`).
 - `make build`: production bundle in `apps/client/dist`, Elm compiled with `--optimize` (`npm run build`).
-- `make check`: everything CI runs except e2e. Today that is only `build`.
+- `make lint-workflows`: actionlint on `.github/workflows/` (installed by the Brewfile; uses shellcheck on `run:` scripts when it is on the PATH).
+- `make check`: everything CI runs except e2e. Today that is `build` and `lint-workflows`.
+
+CI jobs: `changes`, path-filtered `client`, unfiltered `repo` (actionlint, plus the PR-title Conventional Commits check on pull requests, whose regex must stay identical to the commit-msg hook's), and the `ci-ok` aggregator; add every new job to `ci-ok.needs`. Pin every `uses:` by full commit SHA with the version in a trailing comment (`docker://` images: `image:<version>@sha256:<digest>`).
 
 There are no tests yet. Don't invent lint/test commands; when one is added, list it here, including how to run a single test.
 
