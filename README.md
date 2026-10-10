@@ -21,17 +21,17 @@ make setup
 
 ## Commands
 
-| Command               | What it does                                                  |
-| --------------------- | ------------------------------------------------------------- |
-| `make setup`          | Install machine tools (Homebrew bundle) and npm dependencies. |
-| `make dev`            | Start the client dev server on http://localhost:5173.         |
-| `make fmt`            | Format all code (elm-format).                                 |
-| `make fmt-check`      | Fail if any file is not formatted.                            |
-| `make lint`           | Run static analysis (elm-review).                             |
-| `make test`           | Run the Elm unit and program tests (elm-test-rs).             |
-| `make build`          | Build the optimised production bundle in `apps/client/dist`.  |
-| `make lint-workflows` | Lint the GitHub Actions workflows with actionlint.            |
-| `make check`          | Run every check CI runs, except browser tests.                |
+| Command               | What it does                                                                    |
+| --------------------- | ------------------------------------------------------------------------------- |
+| `make setup`          | Install machine tools (Homebrew bundle) and npm dependencies.                   |
+| `make dev`            | Start the client dev server on http://localhost:5173.                           |
+| `make fmt`            | Format all code (elm-format, ESLint fixes).                                     |
+| `make fmt-check`      | Fail if any file is not formatted.                                              |
+| `make lint`           | Run elm-review, ESLint (TS, JSON, CSS, Markdown) and the TypeScript type check. |
+| `make test`           | Run the Elm unit and program tests (elm-test-rs).                               |
+| `make build`          | Build the optimised production bundle in `apps/client/dist`.                    |
+| `make lint-workflows` | Lint the GitHub Actions workflows with actionlint.                              |
+| `make check`          | Run every check CI runs, except browser tests.                                  |
 
 Run `make` (or `make help`) to list the targets.
 

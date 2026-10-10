@@ -11,6 +11,9 @@ The Cantrip web client: an Elm 0.19.3 application built with [Vite](https://vite
 - `src/Route.elm`, `src/Effect.elm`: routing and side effects (see Architecture).
 - `src/Page/`: one Elm module per page.
 - `tests/`: Elm unit and program tests, run by elm-test-rs.
+- `src/elm.d.ts`: hand-written types for the Elm entry point, so the bootstrap type-checks. Update it when `Main` gains flags or ports.
+- `tsconfig.json`: the strictest TypeScript settings. `tsc` only type-checks (Vite does the compiling).
+- `eslint.config.ts`: ESLint, the only formatter and linter for non-Elm files. `eslint.format.config.ts` holds the formatting rules alone.
 - `vite.config.ts`: compiles Elm with `--optimize` for `vite build` and with the Elm debugger for the dev server.
 
 ## Architecture
@@ -31,15 +34,15 @@ The Cantrip web client: an Elm 0.19.3 application built with [Vite](https://vite
 
 Run these here, or through the root `Makefile`.
 
-| Script              | What it does                              |
-| ------------------- | ----------------------------------------- |
-| `npm run dev`       | Start the dev server with hot reload.     |
-| `npm run build`     | Build the production bundle into `dist/`. |
-| `npm run preview`   | Serve the production bundle from `dist/`. |
-| `npm run fmt`       | Format every Elm file with elm-format.    |
-| `npm run fmt-check` | Fail if an Elm file is not formatted.     |
-| `npm run lint`      | Run elm-review.                           |
-| `npm test`          | Run the Elm tests with elm-test-rs.       |
+| Script              | What it does                                                  |
+| ------------------- | ------------------------------------------------------------- |
+| `npm run dev`       | Start the dev server with hot reload.                         |
+| `npm run build`     | Build the production bundle into `dist/`.                     |
+| `npm run preview`   | Serve the production bundle from `dist/`.                     |
+| `npm run fmt`       | Format Elm with elm-format, then apply ESLint fixes.          |
+| `npm run fmt-check` | Fail if an Elm file or a TypeScript file is not formatted.    |
+| `npm run lint`      | Run elm-review, ESLint, then the type check (`tsc --noEmit`). |
+| `npm test`          | Run the Elm tests with elm-test-rs.                           |
 
 ## Toolchain
 
@@ -48,6 +51,15 @@ Run these here, or through the root `Makefile`.
 - elm-format and elm-review are pinned the same way. `fmt` and `lint` delegate to per-tool scripts (`fmt:elm`, `fmt-check:elm`, `lint:elm`) so other tools can join them.
 - elm-test-rs is pinned the same way. Pass a file to run only its tests: `npm test -- tests/RouteTest.elm`.
 - elm-review's configuration lives in `review/`. It started from the [jfmengels application template](https://github.com/jfmengels/elm-review-config/tree/master/application); its `elm.json` was bumped from 0.19.1 to 0.19.3 by hand, since elm-review refuses to compile a review project for another Elm version. Elm packages there are updated by hand too.
+
+## Formatting and linting
+
+ESLint formats and lints everything that isn't Elm. There is no Prettier.
+
+- TypeScript: typescript-eslint `strictTypeChecked` and `stylisticTypeChecked`, plus `@stylistic/eslint-plugin` for formatting (double quotes, semicolons, 2-space indent). Type assertions are banned.
+- JSON, CSS and Markdown: `@eslint/json`, `@eslint/css` and `@eslint/markdown`. They are linted, but their whitespace formatting is not enforced.
+
+The ESLint and TypeScript parts of `fmt`, `fmt-check` and `lint` are the `fmt:eslint`, `fmt-check:eslint`, `lint:eslint` and `lint:tsc` scripts.
 
 ## Known quirk
 
