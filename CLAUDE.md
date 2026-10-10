@@ -13,9 +13,12 @@ Run from the repo root. Each Make target delegates to an npm script in `apps/cli
 - `make setup`: `brew bundle` (Brewfile), then `npm ci` in the client.
 - `make dev`: Vite dev server on http://localhost:5173 (`npm run dev`).
 - `make build`: production bundle in `apps/client/dist`, Elm compiled with `--optimize` (`npm run build`).
-- `make check`: everything CI runs except e2e. Today that is only `build`.
+- `make fmt`: format every Elm file in the client with elm-format (`npm run fmt`).
+- `make fmt-check`: fail on unformatted Elm files (`npm run fmt-check`).
+- `make lint`: elm-review with the jfmengels application rules, config in `apps/client/review/` (`npm run lint`). `npx elm-review --fix` in `apps/client` applies automatic fixes.
+- `make check`: everything CI runs except e2e: `fmt-check`, `lint`, `build`.
 
-There are no tests yet. Don't invent lint/test commands; when one is added, list it here, including how to run a single test.
+There are no tests yet. Don't invent test commands; when one is added, list it here, including how to run a single test.
 
 Node is pinned by the `volta` field in `apps/client/package.json`; CI reads the same pin. npm deps are saved exact (`apps/client/.npmrc`).
 
