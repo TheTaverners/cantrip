@@ -45,7 +45,7 @@ Run `make` (or `make help`) to list the targets.
 The hooks live in [`.githooks/`](.githooks) and `make setup` activates them (it sets `git config core.hooksPath .githooks`).
 
 - `commit-msg` rejects a commit whose subject isn't a [Conventional Commit](https://www.conventionalcommits.org): `<type>(<optional scope>): <description>`, with type one of `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`, `revert`, and `!` before the colon for a breaking change. Subjects Git writes itself (merges, reverts, `fixup!`, `squash!`, `amend!`) are accepted.
-- `pre-commit` checks the client files you staged: elm-format for Elm files, ESLint (lint and formatting) for TS, JSON, CSS and Markdown files. It only checks, never modifies or re-stages anything. When it fails, run `make fmt`, fix any remaining lint error by hand, and stage the files again. It checks the working-tree copy of each staged file, so stage whole files rather than parts of them. Problems in files you didn't stage don't block the commit.
+- `pre-commit` checks the client files you staged: elm-format for Elm files, ESLint (lint and formatting) for TS, JSON, CSS and Markdown files. It only checks, never modifies or re-stages anything. When it fails, run `make fmt`, fix any remaining lint error by hand, and stage the files again. It checks the staged content, so a partially staged file is judged on what you are committing. Problems in files you didn't stage don't block the commit.
 
 `git commit --no-verify` skips both hooks. CI still runs the format and lint checks on the whole client, and checks the PR title.
 

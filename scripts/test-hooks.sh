@@ -191,6 +191,67 @@ else
 fi
 reset_sandbox
 
+# Partially staged files: the hook checks the staged content, not the
+# working-tree copy.
+CLEAN_ELM=$'module Partial exposing (x)\n\n\nx : Int\nx =\n    1\n'
+UGLY_ELM=$'module Partial exposing (x)\nx   =   1\n'
+CLEAN_TS=$'export const partial = 1;\n'
+UGLY_TS=$'export const partial: any = 1\n'
+
+printf '%s' "$CLEAN_ELM" >apps/client/src/Partial.elm
+printf '%s' "$CLEAN_TS" >apps/client/src/partial.ts
+git add apps/client/src/Partial.elm apps/client/src/partial.ts
+printf '%s' "$UGLY_ELM" >apps/client/src/Partial.elm
+printf '%s' "$UGLY_TS" >apps/client/src/partial.ts
+before_tree=$(git diff --binary)
+if try_commit -m "feat(client): add partial module"; then
+    pass "clean staged content with dirty unstaged changes passes"
+else
+    fail "clean staged content with dirty unstaged changes passes (got: $OUTPUT)"
+fi
+if [[ $(git diff --binary) == "$before_tree" ]]; then
+    pass "passing partial commit leaves the unstaged changes alone"
+else
+    fail "passing partial commit leaves the unstaged changes alone"
+fi
+reset_sandbox
+
+printf '%s' "$UGLY_ELM" >apps/client/src/Partial.elm
+git add apps/client/src/Partial.elm
+printf '%s' "$CLEAN_ELM" >apps/client/src/Partial.elm
+before=$(snapshot)
+if try_commit -m "feat(client): add partial module"; then
+    fail "unformatted staged Elm with a clean working copy blocks the commit"
+elif [[ $OUTPUT == *"apps/client/src/Partial.elm"* && $OUTPUT == *"make fmt"* ]]; then
+    pass "unformatted staged Elm with a clean working copy blocks the commit"
+else
+    fail "unformatted staged Elm with a clean working copy names the file (got: $OUTPUT)"
+fi
+if [[ $(snapshot) == "$before" ]]; then
+    pass "blocked partial Elm commit leaves the working tree and index untouched"
+else
+    fail "blocked partial Elm commit leaves the working tree and index untouched"
+fi
+reset_sandbox
+
+printf '%s' "$UGLY_TS" >apps/client/src/partial.ts
+git add apps/client/src/partial.ts
+printf '%s' "$CLEAN_TS" >apps/client/src/partial.ts
+before=$(snapshot)
+if try_commit -m "feat(client): add partial module"; then
+    fail "staged TS with ESLint errors and a clean working copy blocks the commit"
+elif [[ $OUTPUT == *"no-explicit-any"* && $OUTPUT == *"@stylistic/semi"* && $OUTPUT == *"make fmt"* ]]; then
+    pass "staged TS with ESLint errors and a clean working copy blocks the commit"
+else
+    fail "staged TS with ESLint errors and a clean working copy reports them (got: $OUTPUT)"
+fi
+if [[ $(snapshot) == "$before" ]]; then
+    pass "blocked partial TS commit leaves the working tree and index untouched"
+else
+    fail "blocked partial TS commit leaves the working tree and index untouched"
+fi
+reset_sandbox
+
 echo
 if ((FAILURES > 0)); then
     echo "$FAILURES hook test(s) failed."

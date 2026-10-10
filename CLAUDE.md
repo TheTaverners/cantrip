@@ -23,7 +23,7 @@ Run from the repo root. Each Make target delegates to an npm script in `apps/cli
 - `make test-hooks`: `scripts/test-hooks.sh`, which commits in a throwaway copy of the repo to test both git hooks. Not an npm script, not run in CI.
 - `make check`: everything CI runs except e2e: `fmt-check`, `lint`, `test`, `build`, `lint-workflows`; plus `test-hooks`.
 
-Git hooks (`.githooks/`, plain bash): `commit-msg` enforces Conventional Commits on the subject (skips Git-generated `Merge `/`Revert `/`fixup! `/`squash! `/`amend! ` subjects); `pre-commit` runs elm-format `--validate` on staged client Elm files and `eslint` on staged client TS/JSON/CSS/Markdown files. It is check-only (never modifies or re-stages) and checks the working-tree copy of staged files.
+Git hooks (`.githooks/`, plain bash): `commit-msg` enforces Conventional Commits on the subject (skips Git-generated `Merge `/`Revert `/`fixup! `/`squash! `/`amend! ` subjects); `pre-commit` runs elm-format `--validate` on staged client Elm files and `eslint` on staged client TS/JSON/CSS/Markdown files. It is check-only (never modifies or re-stages) and checks the staged content (index blobs piped to the tools via stdin), not the working-tree copy.
 
 CI jobs: `changes`, path-filtered `client` and `client-e2e` (needs `client`; uploads the Playwright report artifact on failure), unfiltered `repo` (actionlint, plus the PR-title Conventional Commits check on pull requests, whose regex must stay identical to the commit-msg hook's), and the `ci-ok` aggregator; add every new job to `ci-ok.needs`. Pin every `uses:` by full commit SHA with the version in a trailing comment (`docker://` images: `image:<version>@sha256:<digest>`).
 
