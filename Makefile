@@ -7,7 +7,7 @@ CLIENT_DIR := apps/client
 
 .DEFAULT_GOAL := help
 
-.PHONY: help setup setup-hooks dev fmt fmt-check lint build lint-workflows test-hooks check
+.PHONY: help setup setup-hooks dev fmt fmt-check lint test build lint-workflows test-hooks check
 
 help: ## List the available targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | \
@@ -39,6 +39,9 @@ fmt-check: ## Fail if any file is not formatted
 lint: ## Run the linters (elm-review, ESLint) and the TypeScript type check
 	cd $(CLIENT_DIR) && npm run lint
 
+test: ## Run the Elm unit and program tests
+	cd $(CLIENT_DIR) && npm run test
+
 build: ## Build the optimised production client bundle
 	cd $(CLIENT_DIR) && npm run build
 
@@ -51,4 +54,4 @@ lint-workflows: ## Lint the GitHub Actions workflows with actionlint
 test-hooks: ## Test the git hooks in a throwaway copy of the repository
 	scripts/test-hooks.sh
 
-check: fmt-check lint build lint-workflows test-hooks ## Run every check CI runs (except e2e)
+check: fmt-check lint test build lint-workflows test-hooks ## Run every check CI runs (except e2e)

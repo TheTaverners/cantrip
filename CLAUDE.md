@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project layout
 
-Monorepo. Deployable components live under `apps/` (only `apps/client`, an Elm 0.19.3 SPA built with Vite, exists today). The root stays language-agnostic: no root `package.json`, only the `Makefile`, `Brewfile`, `.editorconfig` and `.gitignore`. CI lives in `.github/workflows/ci.yml`.
+Monorepo. Deployable components live under `apps/` (only `apps/client`, an Elm 0.19.3 SPA built with Vite, exists today). The root stays language-agnostic: no root `package.json`, only the `Makefile`, `Brewfile`, `renovate.json`, `.editorconfig` and `.gitignore`. CI lives in `.github/workflows/ci.yml`.
 
 ## Commands
 
@@ -17,9 +17,10 @@ Run from the repo root. Each Make target delegates to an npm script in `apps/cli
 - `make fmt`: elm-format on every Elm file, then ESLint fixes on the non-Elm files (`npm run fmt`).
 - `make fmt-check`: fail on unformatted Elm files, or on ESLint formatting rules (`eslint.format.config.ts`) (`npm run fmt-check`).
 - `make lint`: elm-review with the jfmengels application rules, config in `apps/client/review/`; then ESLint on TS/JSON/CSS/Markdown; then `tsc --noEmit` (`npm run lint`). `npx elm-review --fix` in `apps/client` applies automatic fixes; `npx eslint <path>` lints a single file.
+- `make test`: Elm unit and program tests with elm-test-rs (`npm test`). Single file: `cd apps/client && npm test -- tests/RouteTest.elm`. Reproduce a fuzz run with `--seed <n>` from the output.
 - `make lint-workflows`: actionlint on `.github/workflows/` (installed by the Brewfile; uses shellcheck on `run:` scripts when it is on the PATH). Not an npm script.
 - `make test-hooks`: `scripts/test-hooks.sh`, which commits in a throwaway copy of the repo to test both git hooks. Not an npm script, not run in CI.
-- `make check`: everything CI runs except e2e: `fmt-check`, `lint`, `build`, `lint-workflows`; plus `test-hooks`.
+- `make check`: everything CI runs except e2e: `fmt-check`, `lint`, `test`, `build`, `lint-workflows`; plus `test-hooks`.
 
 Git hooks (`.githooks/`, plain bash): `commit-msg` enforces Conventional Commits on the subject (skips Git-generated `Merge `/`Revert `/`fixup! `/`squash! `/`amend! ` subjects); `pre-commit` runs elm-format `--validate` on staged client Elm files and `eslint` on staged client TS/JSON/CSS/Markdown files. It is check-only (never modifies or re-stages) and checks the working-tree copy of staged files.
 
@@ -27,7 +28,9 @@ CI jobs: `changes`, path-filtered `client`, unfiltered `repo` (actionlint, plus 
 
 Each aggregate script chains per-tool scripts: `fmt:elm`/`fmt:eslint`, `fmt-check:elm`/`fmt-check:eslint`, `lint:elm`/`lint:eslint`/`lint:tsc`.
 
-There are no tests yet. Don't invent test commands; when one is added, list it here, including how to run a single test.
+Elm test dependencies are edited by hand in `apps/client/elm.json` (`test-dependencies`); elm-json is broken on Elm 0.19.3. Client architecture (Route, pages, Effect pattern) is described in `apps/client/README.md`.
+
+Renovate (`renovate.json`) groups weekly updates and automerges non-major devDependency updates. When editing it, validate with `npx --yes --package renovate@44.149.1 -- renovate-config-validator --strict` from the repo root (not a dependency, not in `make check`). Keep the `typescript` `allowedVersions` cap in sync with typescript-eslint's peer range. Elm packages in `elm.json` aren't managed by Renovate; bump them by hand.
 
 TypeScript (only the bootstrap `src/main.ts`) uses the strictest tsconfig. The Elm entry point is typed by hand in `src/elm.d.ts`: update it when `Main` gains flags or ports. ESLint is the only formatter for non-Elm files (no Prettier): double quotes, semicolons, 2-space indent. Type assertions (`as`) are banned.
 
