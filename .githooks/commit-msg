@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+# Path to the commit message file (provided by Git).
+COMMIT_MSG_FILE=$1
+
+if [[ -z $COMMIT_MSG_FILE || ! -f $COMMIT_MSG_FILE ]]; then
+    echo "ERROR: Commit message file not provided or not found." >&2
+    exit 1
+fi
+
+# Validate the subject line only (first line of the message).
+SUBJECT=$(head -n 1 "$COMMIT_MSG_FILE")
+
+# Skip Git-generated subjects (merges, reverts, autosquash commits).
+GIT_GENERATED_REGEX='^((Merge|Revert) |(fixup|squash|amend)! )'
+
+if [[ $SUBJECT =~ $GIT_GENERATED_REGEX ]]; then
+    exit 0
+fi
+
+# Keep identical to the PR-title check in .github/workflows/ci.yml.
+CONVENTIONAL_COMMIT_REGEX='^(feat|fix|docs|style|refactor|test|chore|build|ci|perf|revert)(\([a-zA-Z0-9_./-]+\))?!?: [^ ].*$'
+
+# Check if the subject matches the regex.
+if ! [[ $SUBJECT =~ $CONVENTIONAL_COMMIT_REGEX ]]; then
+    {
+        echo "ERROR: Commit message does not follow Conventional Commits format."
+        echo
+        echo "The commit message should be structured as follows:"
+        echo "<type>(<optional scope>): <description>"
+        echo "[optional body]"
+        echo "[optional footer(s)]"
+        echo
+        echo "Valid types are:"
+        echo "  feat:     A new feature."
+        echo "  fix:      A bug fix."
+        echo "  docs:     Documentation changes."
+        echo "  style:    Code style changes (formatting, missing semicolons, etc.)."
+        echo "  refactor: Code refactoring (neither fixes a bug nor adds a feature)."
+        echo "  test:     Adding or updating tests."
+        echo "  chore:    Routine tasks like updating dependencies or build tools."
+        echo "  build:    Changes affecting the build system or external dependencies."
+        echo "  ci:       Changes to CI configuration files or scripts."
+        echo "  perf:     Performance improvements."
+        echo "  revert:   Reverting a previous commit."
+        echo
+        echo "Examples:"
+        echo "  feat(auth): add login functionality"
+        echo "  fix(api): resolve timeout issue"
+        echo "  docs(readme): update installation instructions"
+        echo
+        echo "Your subject line was:"
+        echo "  $SUBJECT"
+    } >&2
+    exit 1
+fi
+
+exit 0

@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Checks the client files staged for commit: elm-format for Elm, ESLint
+# (lint and formatting) for TS, JSON, CSS and Markdown.
+#
+# Check-only: it never modifies or re-stages files. It checks the working-tree
+# copy of each staged file, so stage the whole file before committing.
+
+set -uo pipefail
+
+CLIENT_DIR=apps/client
+
+ROOT=$(git rev-parse --show-toplevel) || exit 1
+cd "$ROOT" || exit 1
+
+ELM_FILES=()
+ESLINT_FILES=()
+while IFS= read -r -d '' file; do
+    [[ $file == "$CLIENT_DIR"/* && -f $file ]] || continue
+    relative=${file#"$CLIENT_DIR"/}
+    case $file in
+        *.elm) ELM_FILES+=("$relative") ;;
+        *.ts | *.json | *.css | *.md) ESLINT_FILES+=("$relative") ;;
+    esac
+done < <(git diff --cached --name-only --diff-filter=ACMR -z)
+
+if ((${#ELM_FILES[@]} == 0 && ${#ESLINT_FILES[@]} == 0)); then
+    exit 0
+fi
+
+BIN="$CLIENT_DIR/node_modules/.bin"
+if [[ ! -x $BIN/elm-format || ! -x $BIN/eslint ]]; then
+    echo "pre-commit: the client's tools are not installed. Run 'make setup'." >&2
+    exit 1
+fi
+
+cd "$CLIENT_DIR" || exit 1
+failed=0
+
+if ((${#ELM_FILES[@]} > 0)); then
+    if ! node_modules/.bin/elm-format --validate "${ELM_FILES[@]}" >/dev/null 2>&1; then
+        echo "pre-commit: these staged Elm files are not formatted:" >&2
+        for file in "${ELM_FILES[@]}"; do
+            node_modules/.bin/elm-format --validate "$file" >/dev/null 2>&1 ||
+                echo "  $CLIENT_DIR/$file" >&2
+        done
+        failed=1
+    fi
+fi
+
+if ((${#ESLINT_FILES[@]} > 0)); then
+    if ! node_modules/.bin/eslint --no-warn-ignored -- "${ESLINT_FILES[@]}" >&2; then
+        echo "pre-commit: ESLint found problems in staged files (see above)." >&2
+        failed=1
+    fi
+fi
+
+if ((failed)); then
+    {
+        echo
+        echo "Run 'make fmt' to fix formatting, fix any remaining lint errors by hand,"
+        echo "then stage the files again and commit."
+    } >&2
+    exit 1
+fi

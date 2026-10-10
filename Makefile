@@ -7,7 +7,7 @@ CLIENT_DIR := apps/client
 
 .DEFAULT_GOAL := help
 
-.PHONY: help setup dev fmt fmt-check lint build lint-workflows check
+.PHONY: help setup setup-hooks dev fmt fmt-check lint build lint-workflows test-hooks check
 
 help: ## List the available targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | \
@@ -22,6 +22,10 @@ setup: ## Install machine tools (Homebrew bundle) and project dependencies
 		echo "error: npm is not on your PATH. Run 'volta setup', restart your shell and re-run 'make setup'." >&2; \
 		exit 1; }
 	cd $(CLIENT_DIR) && npm ci
+	@$(MAKE) -s setup-hooks
+
+setup-hooks: ## Use the versioned git hooks in .githooks
+	git config core.hooksPath .githooks
 
 dev: ## Start the client dev server
 	cd $(CLIENT_DIR) && npm run dev
@@ -44,4 +48,7 @@ lint-workflows: ## Lint the GitHub Actions workflows with actionlint
 		exit 1; }
 	actionlint
 
-check: fmt-check lint build lint-workflows ## Run every check CI runs (except e2e)
+test-hooks: ## Test the git hooks in a throwaway copy of the repository
+	scripts/test-hooks.sh
+
+check: fmt-check lint build lint-workflows test-hooks ## Run every check CI runs (except e2e)
