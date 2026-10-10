@@ -1,9 +1,86 @@
-module Main exposing (main)
+module Main exposing (Model, Msg, init, main, onUrlChange, onUrlRequest, update, view)
 
-import Html exposing (Html)
+import Browser
+import Browser.Navigation
+import Effect exposing (Effect)
 import Page.Home
+import Page.NotFound
+import Route exposing (Route)
+import Url exposing (Url)
 
 
-main : Html msg
+type alias Model =
+    { route : Route }
+
+
+type Msg
+    = UrlRequested Browser.UrlRequest
+    | UrlChanged Url
+
+
+{-| The navigation key lives next to the model, outside of it, so that `init`,
+`update` and `view` stay runnable under elm-program-test, which has no key.
+-}
+main : Program () ( Browser.Navigation.Key, Model ) Msg
 main =
-    Page.Home.view
+    Browser.application
+        { init = applicationInit
+        , view = \( _, model ) -> view model
+        , update = applicationUpdate
+        , subscriptions = \_ -> Sub.none
+        , onUrlRequest = onUrlRequest
+        , onUrlChange = onUrlChange
+        }
+
+
+applicationInit : () -> Url -> Browser.Navigation.Key -> ( ( Browser.Navigation.Key, Model ), Cmd Msg )
+applicationInit flags url key =
+    withKey key (init flags url ())
+
+
+applicationUpdate : Msg -> ( Browser.Navigation.Key, Model ) -> ( ( Browser.Navigation.Key, Model ), Cmd Msg )
+applicationUpdate msg ( key, model ) =
+    withKey key (update msg model)
+
+
+withKey : Browser.Navigation.Key -> ( Model, Effect Msg ) -> ( ( Browser.Navigation.Key, Model ), Cmd Msg )
+withKey key ( model, effect ) =
+    ( ( key, model ), Effect.toCmd key effect )
+
+
+init : () -> Url -> () -> ( Model, Effect Msg )
+init () url () =
+    ( { route = Route.fromUrl url }, Effect.None )
+
+
+update : Msg -> Model -> ( Model, Effect Msg )
+update msg model =
+    case msg of
+        UrlRequested (Browser.Internal url) ->
+            ( model, Effect.PushUrl (Url.toString url) )
+
+        UrlRequested (Browser.External href) ->
+            ( model, Effect.LoadUrl href )
+
+        UrlChanged url ->
+            ( { model | route = Route.fromUrl url }, Effect.None )
+
+
+view : Model -> Browser.Document Msg
+view model =
+    case model.route of
+        Route.Home ->
+            Page.Home.view
+
+        Route.NotFound ->
+            Page.NotFound.view
+
+
+onUrlRequest : Browser.UrlRequest -> Msg
+onUrlRequest =
+    UrlRequested
+
+
+onUrlChange : Url -> Msg
+onUrlChange =
+    UrlChanged
