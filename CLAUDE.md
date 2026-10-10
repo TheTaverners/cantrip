@@ -10,23 +10,24 @@ Monorepo. Deployable components live under `apps/` (only `apps/client`, an Elm 0
 
 Run from the repo root. Each Make target delegates to an npm script in `apps/client` (run `npm run <script>` there for the same thing).
 
-- `make setup`: `brew bundle` (Brewfile), then `npm ci` in the client.
+- `make setup`: `brew bundle` (Brewfile), then `npm ci` in the client, then the Playwright Chromium and WebKit browsers (`npm run e2e:install`).
 - `make dev`: Vite dev server on http://localhost:5173 (`npm run dev`).
 - `make build`: production bundle in `apps/client/dist`, Elm compiled with `--optimize` (`npm run build`).
 - `make fmt`: elm-format on every Elm file, then ESLint fixes on the non-Elm files (`npm run fmt`).
 - `make fmt-check`: fail on unformatted Elm files, or on ESLint formatting rules (`eslint.format.config.ts`) (`npm run fmt-check`).
 - `make lint`: elm-review with the jfmengels application rules, config in `apps/client/review/`; then ESLint on TS/JSON/CSS/Markdown; then `tsc --noEmit` (`npm run lint`). `npx elm-review --fix` in `apps/client` applies automatic fixes; `npx eslint <path>` lints a single file.
 - `make test`: Elm unit and program tests with elm-test-rs (`npm test`). Single file: `cd apps/client && npm test -- tests/RouteTest.elm`. Reproduce a fuzz run with `--seed <n>` from the output.
+- `make e2e`: Playwright smoke test (`e2e/smoke.spec.ts`) on Chromium and WebKit against `vite preview` of a fresh production build, which `playwright.config.ts` starts itself (`npm run e2e`). Single test, in `apps/client`: `npx playwright test e2e/smoke.spec.ts`, narrowed with `-g "<test title>"` or `--project=webkit`. HTML report in `apps/client/playwright-report/` (`npx playwright show-report`).
 - `make lint-workflows`: actionlint on `.github/workflows/` (installed by the Brewfile; uses shellcheck on `run:` scripts when it is on the PATH). Not an npm script.
 - `make check`: everything CI runs except e2e: `fmt-check`, `lint`, `test`, `build`, `lint-workflows`.
 
-CI jobs: `changes`, path-filtered `client`, unfiltered `repo` (actionlint, plus the PR-title Conventional Commits check on pull requests, whose regex must stay identical to the commit-msg hook's), and the `ci-ok` aggregator; add every new job to `ci-ok.needs`. Pin every `uses:` by full commit SHA with the version in a trailing comment (`docker://` images: `image:<version>@sha256:<digest>`).
+CI jobs: `changes`, path-filtered `client` and `client-e2e` (needs `client`; uploads the Playwright report artifact on failure), unfiltered `repo` (actionlint, plus the PR-title Conventional Commits check on pull requests, whose regex must stay identical to the commit-msg hook's), and the `ci-ok` aggregator; add every new job to `ci-ok.needs`. Pin every `uses:` by full commit SHA with the version in a trailing comment (`docker://` images: `image:<version>@sha256:<digest>`).
 
 Each aggregate script chains per-tool scripts: `fmt:elm`/`fmt:eslint`, `fmt-check:elm`/`fmt-check:eslint`, `lint:elm`/`lint:eslint`/`lint:tsc`.
 
 Elm test dependencies are edited by hand in `apps/client/elm.json` (`test-dependencies`); elm-json is broken on Elm 0.19.3. Client architecture (Route, pages, Effect pattern) is described in `apps/client/README.md`.
 
-TypeScript (only the bootstrap `src/main.ts`) uses the strictest tsconfig. The Elm entry point is typed by hand in `src/elm.d.ts`: update it when `Main` gains flags or ports. ESLint is the only formatter for non-Elm files (no Prettier): double quotes, semicolons, 2-space indent. Type assertions (`as`) are banned.
+TypeScript (the bootstrap `src/main.ts`, the Playwright tests in `e2e/` and the `*.ts` config files) uses the strictest tsconfig; every linted `.ts` file must be in its `include`. The Elm entry point is typed by hand in `src/elm.d.ts`: update it when `Main` gains flags or ports. ESLint is the only formatter for non-Elm files (no Prettier): double quotes, semicolons, 2-space indent. Type assertions (`as`) are banned.
 
 Node is pinned by the `volta` field in `apps/client/package.json`; CI reads the same pin. npm deps are saved exact (`apps/client/.npmrc`).
 

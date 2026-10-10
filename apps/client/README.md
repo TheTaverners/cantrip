@@ -28,21 +28,24 @@ The Cantrip web client: an Elm 0.19.3 application built with [Vite](https://vite
 
 - `tests/RouteTest.elm` tests the `Route` interface: a fuzz test that route → path → route round-trips, and a check that unknown paths parse to `NotFound`.
 - `tests/MainTest.elm` runs the whole program with [elm-program-test](https://package.elm-lang.org/packages/avh4/elm-program-test/latest/), starting from a URL and asserting on what the page shows. elm-program-test has no title assertion, so `expectTitle` reads the title from `Main.view`.
+- `e2e/smoke.spec.ts` is the browser smoke test: the production bundle, served by `vite preview`, shows "Hello, World" under the title "Cantrip" in Chromium and WebKit. `playwright.config.ts` builds and starts the server itself. Single test: `npx playwright test e2e/smoke.spec.ts`, with `-g "<title>"` or `--project=webkit` to narrow it; reports land in `playwright-report/`.
 - Test dependencies are listed by hand in the `test-dependencies` block of `elm.json` (elm-json does not work with Elm 0.19.3).
 
 ## Scripts
 
 Run these here, or through the root `Makefile`.
 
-| Script              | What it does                                                  |
-| ------------------- | ------------------------------------------------------------- |
-| `npm run dev`       | Start the dev server with hot reload.                         |
-| `npm run build`     | Build the production bundle into `dist/`.                     |
-| `npm run preview`   | Serve the production bundle from `dist/`.                     |
-| `npm run fmt`       | Format Elm with elm-format, then apply ESLint fixes.          |
-| `npm run fmt-check` | Fail if an Elm file or a TypeScript file is not formatted.    |
-| `npm run lint`      | Run elm-review, ESLint, then the type check (`tsc --noEmit`). |
-| `npm test`          | Run the Elm tests with elm-test-rs.                           |
+| Script                | What it does                                                   |
+| --------------------- | -------------------------------------------------------------- |
+| `npm run dev`         | Start the dev server with hot reload.                          |
+| `npm run build`       | Build the production bundle into `dist/`.                      |
+| `npm run preview`     | Serve the production bundle from `dist/`.                      |
+| `npm run fmt`         | Format Elm with elm-format, then apply ESLint fixes.           |
+| `npm run fmt-check`   | Fail if an Elm file or a TypeScript file is not formatted.     |
+| `npm run lint`        | Run elm-review, ESLint, then the type check (`tsc --noEmit`).  |
+| `npm test`            | Run the Elm tests with elm-test-rs.                            |
+| `npm run e2e`         | Build, serve with `vite preview`, run Playwright (2 browsers). |
+| `npm run e2e:install` | Install the Chromium and WebKit browsers for Playwright.       |
 
 ## Toolchain
 
