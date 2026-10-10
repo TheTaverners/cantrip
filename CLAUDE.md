@@ -8,7 +8,7 @@ Monorepo. Deployable components live under `apps/` (only `apps/client`, an Elm 0
 
 ## Commands
 
-Run from the repo root. Each Make target delegates to an npm script in `apps/client` (run `npm run <script>` there for the same thing).
+Run from the repo root. `dev`, `fmt`, `fmt-check`, `lint`, `test`, `e2e` and `build` each delegate to the same-named npm script in `apps/client` (run `npm run <script>` there for the same thing). The others don't: `setup` and `setup-hooks` install tools and configure git, `lint-workflows` runs actionlint, `test-hooks` runs a bash script, and `check` chains other targets.
 
 - `make setup`: `brew bundle` (Brewfile), then `npm ci` in the client, then the Playwright Chromium and WebKit browsers (`npm run e2e:install`), then `make setup-hooks`.
 - `make setup-hooks`: `git config core.hooksPath .githooks`. Worktrees share git config, so this affects every checkout of the repo.
@@ -20,8 +20,8 @@ Run from the repo root. Each Make target delegates to an npm script in `apps/cli
 - `make test`: Elm unit and program tests with elm-test-rs (`npm test`). Single file: `cd apps/client && npm test -- tests/RouteTest.elm`. Reproduce a fuzz run with `--seed <n>` from the output.
 - `make e2e`: Playwright smoke test (`e2e/smoke.spec.ts`) on Chromium and WebKit against `vite preview` of a fresh production build, which `playwright.config.ts` starts itself (`npm run e2e`). Single test, in `apps/client`: `npx playwright test e2e/smoke.spec.ts`, narrowed with `-g "<test title>"` or `--project=webkit`. HTML report in `apps/client/playwright-report/` (`npx playwright show-report`).
 - `make lint-workflows`: actionlint on `.github/workflows/` (installed by the Brewfile; uses shellcheck on `run:` scripts when it is on the PATH). Not an npm script.
-- `make test-hooks`: `scripts/test-hooks.sh`, which commits in a throwaway copy of the repo to test both git hooks. Not an npm script, not run in CI.
-- `make check`: everything CI runs except e2e: `fmt-check`, `lint`, `test`, `build`, `lint-workflows`; plus `test-hooks`.
+- `make test-hooks`: `scripts/test-hooks.sh`, which commits in a throwaway copy of the repo to test both git hooks. Not an npm script. CI's `client` job runs it.
+- `make check`: `fmt-check`, `lint`, `test`, `build`, `lint-workflows`, `test-hooks`: everything CI runs except e2e and the PR-title check (CI-only, it needs a pull request). Keep it in sync with the `client` and `repo` jobs.
 
 Git hooks (`.githooks/`, plain bash): `commit-msg` enforces Conventional Commits on the subject (skips Git-generated `Merge `/`Revert `/`fixup! `/`squash! `/`amend! ` subjects); `pre-commit` runs elm-format `--validate` on staged client Elm files and `eslint` on staged client TS/JSON/CSS/Markdown files. It is check-only (never modifies or re-stages) and checks the staged content (index blobs piped to the tools via stdin), not the working-tree copy.
 

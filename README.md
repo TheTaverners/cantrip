@@ -34,7 +34,7 @@ make setup
 | `make build`          | Build the optimised production bundle in `apps/client/dist`.                    |
 | `make lint-workflows` | Lint the GitHub Actions workflows with actionlint.                              |
 | `make test-hooks`     | Test the git hooks in a throwaway copy of the repository.                       |
-| `make check`          | Run every check CI runs (except browser tests), plus the hook tests.            |
+| `make check`          | Run every CI check except the browser tests and the PR-title check (CI-only).   |
 
 Run `make` (or `make help`) to list the targets.
 
