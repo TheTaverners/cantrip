@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project layout
 
-Monorepo. Deployable components live under `apps/` (only `apps/client`, an Elm 0.19.3 SPA built with Vite, exists today). The root stays language-agnostic: no root `package.json`, only the `Makefile`, `Brewfile`, `.editorconfig` and `.gitignore`. CI lives in `.github/workflows/ci.yml`.
+Monorepo. Deployable components live under `apps/` (only `apps/client`, an Elm 0.19.3 SPA built with Vite, exists today). The root stays language-agnostic: no root `package.json`, only the `Makefile`, `Brewfile`, `renovate.json`, `.editorconfig` and `.gitignore`. CI lives in `.github/workflows/ci.yml`.
 
 ## Commands
 
@@ -20,6 +20,8 @@ Run from the repo root. Each Make target delegates to an npm script in `apps/cli
 - `make check`: everything CI runs except e2e: `fmt-check`, `lint`, `build`, `lint-workflows`.
 
 CI jobs: `changes`, path-filtered `client`, unfiltered `repo` (actionlint, plus the PR-title Conventional Commits check on pull requests, whose regex must stay identical to the commit-msg hook's), and the `ci-ok` aggregator; add every new job to `ci-ok.needs`. Pin every `uses:` by full commit SHA with the version in a trailing comment (`docker://` images: `image:<version>@sha256:<digest>`).
+
+Renovate (`renovate.json`) groups weekly updates and automerges non-major devDependency updates. When editing it, validate with `npx --yes --package renovate@44.149.1 -- renovate-config-validator --strict` from the repo root (not a dependency, not in `make check`). Keep the `typescript` `allowedVersions` cap in sync with typescript-eslint's peer range. Elm packages in `elm.json` aren't managed by Renovate; bump them by hand.
 
 There are no tests yet. Don't invent test commands; when one is added, list it here, including how to run a single test.
 

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    ":semanticCommits",
+    "schedule:weekly"
+  ],
+  "timezone": "Europe/Paris",
+  "dependencyDashboard": true,
+  "packageRules": [
+    {
+      "groupName": "Elm tooling",
+      "matchPackageNames": ["elm", "elm-format", "elm-review", "elm-test-rs", "elm-test"]
+    },
+    {
+      "groupName": "ESLint ecosystem",
+      "matchPackageNames": ["eslint", "@eslint/**", "typescript-eslint", "@stylistic/eslint-plugin", "jiti"]
+    },
+    {
+      "groupName": "Vite ecosystem",
+      "matchPackageNames": ["vite", "vite-plugin-elm"]
+    },
+    {
+      "groupName": "Playwright",
+      "matchPackageNames": ["@playwright/test", "playwright"]
+    },
+    {
+      "groupName": "GitHub Actions",
+      "matchManagers": ["github-actions"]
+    },
+    {
+      "description": "Routine dev-tool updates merge on their own once ci-ok is green.",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true
+    },
+    {
+      "description": "typescript-eslint supports TypeScript < 6.1.0 only, and TypeScript 7 has no JS API.",
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<6.1.0"
+    }
+  ]
+}
