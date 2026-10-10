@@ -17,7 +17,9 @@
     "lint:elm": "elm-review",
     "lint:eslint": "eslint .",
     "lint:tsc": "tsc --noEmit",
-    "test": "elm-test-rs"
+    "test": "elm-test-rs",
+    "e2e": "playwright test",
+    "e2e:install": "playwright install chromium webkit"
   },
   "volta": {
     "node": "24.19.0"
@@ -27,6 +29,7 @@
     "@eslint/js": "10.0.1",
     "@eslint/json": "2.1.1",
     "@eslint/markdown": "8.0.3",
+    "@playwright/test": "1.64.0",
     "@stylistic/eslint-plugin": "5.10.0",
     "@types/node": "24.19.2",
     "elm": "0.19.3-0",

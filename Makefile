@@ -7,13 +7,13 @@ CLIENT_DIR := apps/client
 
 .DEFAULT_GOAL := help
 
-.PHONY: help setup dev fmt fmt-check lint test build lint-workflows check
+.PHONY: help setup dev fmt fmt-check lint test e2e build lint-workflows check
 
 help: ## List the available targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*## "}; {printf "  %-16s %s\n", $$1, $$2}'
 
-setup: ## Install machine tools (Homebrew bundle) and project dependencies
+setup: ## Install machine tools (Homebrew bundle), npm dependencies and Playwright browsers
 	@command -v brew >/dev/null 2>&1 || { \
 		echo "error: Homebrew is required. Install it from https://brew.sh and re-run 'make setup'." >&2; \
 		exit 1; }
@@ -22,6 +22,7 @@ setup: ## Install machine tools (Homebrew bundle) and project dependencies
 		echo "error: npm is not on your PATH. Run 'volta setup', restart your shell and re-run 'make setup'." >&2; \
 		exit 1; }
 	cd $(CLIENT_DIR) && npm ci
+	cd $(CLIENT_DIR) && npm run e2e:install
 
 dev: ## Start the client dev server
 	cd $(CLIENT_DIR) && npm run dev
@@ -37,6 +38,9 @@ lint: ## Run the linters (elm-review, ESLint) and the TypeScript type check
 
 test: ## Run the Elm unit and program tests
 	cd $(CLIENT_DIR) && npm run test
+
+e2e: ## Build the client and run the Playwright smoke tests (Chromium, WebKit)
+	cd $(CLIENT_DIR) && npm run e2e
 
 build: ## Build the optimised production client bundle
 	cd $(CLIENT_DIR) && npm run build
