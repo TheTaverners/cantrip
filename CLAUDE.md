@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project layout
 
-Monorepo. Deployable components live under `apps/` (only `apps/client`, an Elm 0.19.3 SPA built with Vite, exists today). The root stays language-agnostic: no root `package.json`, only the `Makefile`, `Brewfile`, `renovate.json`, `.editorconfig` and `.gitignore`. CI lives in `.github/workflows/ci.yml`.
+Monorepo. Deployable components live under `apps/` (only `apps/client`, an Elm 0.19.3 SPA built with Vite, exists today). The root stays language-agnostic: no root `package.json`, only the `Makefile`, `Brewfile`, `renovate.json`, `.editorconfig` and `.gitignore`. CI lives in `.github/workflows/ci.yml`; the client jobs share their setup (Node, npm and Elm caches, `npm ci`) through the local composite action `.github/actions/setup-client`.
 
 ## Commands
 
@@ -25,7 +25,7 @@ Run from the repo root. Each Make target delegates to an npm script in `apps/cli
 
 Git hooks (`.githooks/`, plain bash): `commit-msg` enforces Conventional Commits on the subject (skips Git-generated `Merge `/`Revert `/`fixup! `/`squash! `/`amend! ` subjects); `pre-commit` runs elm-format `--validate` on staged client Elm files and `eslint` on staged client TS/JSON/CSS/Markdown files. It is check-only (never modifies or re-stages) and checks the staged content (index blobs piped to the tools via stdin), not the working-tree copy.
 
-CI jobs: `changes`, path-filtered `client` and `client-e2e` (needs `client`; uploads the Playwright report artifact on failure), unfiltered `repo` (actionlint, plus the PR-title Conventional Commits check on pull requests, whose regex must stay identical to the commit-msg hook's), and the `ci-ok` aggregator; add every new job to `ci-ok.needs`. Pin every `uses:` by full commit SHA with the version in a trailing comment (`docker://` images: `image:<version>@sha256:<digest>`).
+CI jobs: `changes`, path-filtered `client` and `client-e2e` (needs `client`; uploads the Playwright report artifact on failure), unfiltered `repo` (actionlint, plus the PR-title Conventional Commits check on pull requests, whose regex must stay identical to the commit-msg hook's), and the `ci-ok` aggregator; add every new job to `ci-ok.needs`. Pin every third-party `uses:` (in workflows and in `.github/actions/`) by full commit SHA with the version in a trailing comment (`docker://` images: `image:<version>@sha256:<digest>`).
 
 Each aggregate script chains per-tool scripts: `fmt:elm`/`fmt:eslint`, `fmt-check:elm`/`fmt-check:eslint`, `lint:elm`/`lint:eslint`/`lint:tsc`.
 

@@ -1,0 +1,22 @@
+name: Set up the client
+description: Installs Node (from the volta pin) and the client's npm dependencies, with npm and Elm package caches. Run it after actions/checkout.
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        # Reads the `volta.node` pin, so CI and local Node never drift.
+        node-version-file: apps/client/package.json
+        cache: npm
+        cache-dependency-path: apps/client/package-lock.json
+    - name: Cache Elm packages
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.elm
+        key: elm-${{ runner.os }}-${{ hashFiles('apps/client/elm.json', 'apps/client/review/elm.json') }}
+        restore-keys: elm-${{ runner.os }}-
+    - name: Install npm dependencies
+      shell: bash
+      working-directory: apps/client
+      run: npm ci
