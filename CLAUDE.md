@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project layout
 
-Monorepo. Deployable components live under `apps/` (only `apps/client`, an Elm 0.19.3 SPA built with Vite, exists today). The root stays language-agnostic: no root `package.json`, only the `Makefile`, `Brewfile`, `.editorconfig` and `.gitignore`. CI lives in `.github/workflows/ci.yml`.
+Monorepo. Deployable components live under `apps/` (only `apps/client`, an Elm 0.19.3 SPA built with Vite, exists today). The root stays language-agnostic: no root `package.json`, only the `Makefile`, `Brewfile`, `renovate.json`, `.editorconfig` and `.gitignore`. CI lives in `.github/workflows/ci.yml`.
 
 ## Commands
 
@@ -25,6 +25,8 @@ CI jobs: `changes`, path-filtered `client`, unfiltered `repo` (actionlint, plus 
 Each aggregate script chains per-tool scripts: `fmt:elm`/`fmt:eslint`, `fmt-check:elm`/`fmt-check:eslint`, `lint:elm`/`lint:eslint`/`lint:tsc`.
 
 Elm test dependencies are edited by hand in `apps/client/elm.json` (`test-dependencies`); elm-json is broken on Elm 0.19.3. Client architecture (Route, pages, Effect pattern) is described in `apps/client/README.md`.
+
+Renovate (`renovate.json`) groups weekly updates and automerges non-major devDependency updates. When editing it, validate with `npx --yes --package renovate@44.149.1 -- renovate-config-validator --strict` from the repo root (not a dependency, not in `make check`). Keep the `typescript` `allowedVersions` cap in sync with typescript-eslint's peer range. Elm packages in `elm.json` aren't managed by Renovate; bump them by hand.
 
 TypeScript (only the bootstrap `src/main.ts`) uses the strictest tsconfig. The Elm entry point is typed by hand in `src/elm.d.ts`: update it when `Main` gains flags or ports. ESLint is the only formatter for non-Elm files (no Prettier): double quotes, semicolons, 2-space indent. Type assertions (`as`) are banned.
 
