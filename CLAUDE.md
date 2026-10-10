@@ -17,7 +17,10 @@ Run from the repo root. Each Make target delegates to an npm script in `apps/cli
 - `make fmt-check`: fail on unformatted Elm files (`npm run fmt-check`).
 - `make lint`: elm-review with the jfmengels application rules, config in `apps/client/review/` (`npm run lint`). `npx elm-review --fix` in `apps/client` applies automatic fixes.
 - `make test`: Elm unit and program tests with elm-test-rs (`npm test`). Single file: `cd apps/client && npm test -- tests/RouteTest.elm`. Reproduce a fuzz run with `--seed <n>` from the output.
-- `make check`: everything CI runs except e2e: `fmt-check`, `lint`, `test`, `build`.
+- `make lint-workflows`: actionlint on `.github/workflows/` (installed by the Brewfile; uses shellcheck on `run:` scripts when it is on the PATH). Not an npm script.
+- `make check`: everything CI runs except e2e: `fmt-check`, `lint`, `test`, `build`, `lint-workflows`.
+
+CI jobs: `changes`, path-filtered `client`, unfiltered `repo` (actionlint, plus the PR-title Conventional Commits check on pull requests, whose regex must stay identical to the commit-msg hook's), and the `ci-ok` aggregator; add every new job to `ci-ok.needs`. Pin every `uses:` by full commit SHA with the version in a trailing comment (`docker://` images: `image:<version>@sha256:<digest>`).
 
 Elm test dependencies are edited by hand in `apps/client/elm.json` (`test-dependencies`); elm-json is broken on Elm 0.19.3. Client architecture (Route, pages, Effect pattern) is described in `apps/client/README.md`.
 
