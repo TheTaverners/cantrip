@@ -6,13 +6,21 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "fmt": "npm run fmt:elm",
+    "fmt:elm": "elm-format . --yes",
+    "fmt-check": "npm run fmt-check:elm",
+    "fmt-check:elm": "elm-format . --validate",
+    "lint": "npm run lint:elm",
+    "lint:elm": "elm-review"
   },
   "volta": {
     "node": "24.19.0"
   },
   "devDependencies": {
     "elm": "0.19.3-0",
+    "elm-format": "0.8.8",
+    "elm-review": "2.13.5",
     "elm-test-rs": "3.2.0-0",
     "vite": "8.3.4",
     "vite-plugin-elm": "3.0.1"
