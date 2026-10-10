@@ -48,6 +48,9 @@ config =
     , NoSimpleLetBody.rule
     , NoPrematureLetComputation.rule
     , NoUnused.CustomTypeConstructors.rule []
+        -- Effect is the vocabulary of side effects the app may request, and
+        -- some constructors (e.g. Batch) exist before their first caller.
+        |> Rule.ignoreErrorsForFiles [ "src/Effect.elm" ]
     , NoUnused.CustomTypeConstructorArgs.rule
     , NoUnused.Dependencies.rule
     , NoUnused.Exports.rule
