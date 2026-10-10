@@ -16,9 +16,10 @@ Run from the repo root. Each Make target delegates to an npm script in `apps/cli
 - `make fmt`: format every Elm file in the client with elm-format (`npm run fmt`).
 - `make fmt-check`: fail on unformatted Elm files (`npm run fmt-check`).
 - `make lint`: elm-review with the jfmengels application rules, config in `apps/client/review/` (`npm run lint`). `npx elm-review --fix` in `apps/client` applies automatic fixes.
-- `make check`: everything CI runs except e2e: `fmt-check`, `lint`, `build`.
+- `make test`: Elm unit and program tests with elm-test-rs (`npm test`). Single file: `cd apps/client && npm test -- tests/RouteTest.elm`. Reproduce a fuzz run with `--seed <n>` from the output.
+- `make check`: everything CI runs except e2e: `fmt-check`, `lint`, `test`, `build`.
 
-There are no tests yet. Don't invent test commands; when one is added, list it here, including how to run a single test.
+Elm test dependencies are edited by hand in `apps/client/elm.json` (`test-dependencies`); elm-json is broken on Elm 0.19.3. Client architecture (Route, pages, Effect pattern) is described in `apps/client/README.md`.
 
 Node is pinned by the `volta` field in `apps/client/package.json`; CI reads the same pin. npm deps are saved exact (`apps/client/.npmrc`).
 

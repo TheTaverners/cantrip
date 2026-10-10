@@ -28,6 +28,7 @@ make setup
 | `make fmt`       | Format all code (elm-format).                                 |
 | `make fmt-check` | Fail if any file is not formatted.                            |
 | `make lint`      | Run static analysis (elm-review).                             |
+| `make test`      | Run the Elm unit and program tests (elm-test-rs).             |
 | `make build`     | Build the optimised production bundle in `apps/client/dist`.  |
 | `make check`     | Run every check CI runs, except browser tests.                |
 
