@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Checks the client files staged for commit: elm-format for Elm, ESLint
+# (lint and formatting) for TS, JSON, CSS and Markdown.
+#
+# It checks the staged content (the index), not the working-tree copy, so a
+# partially staged file is judged on exactly what will be committed.
+# Check-only: it never modifies or re-stages files.
+#
+# Type-aware ESLint rules find each TS file through tsconfig on disk, so a TS
+# file that is staged but deleted from the working tree fails to parse.
+
+set -uo pipefail
+
+CLIENT_DIR=apps/client
+
+ROOT=$(git rev-parse --show-toplevel) || exit 1
+cd "$ROOT" || exit 1
+
+ELM_FILES=()
+ESLINT_FILES=()
+while IFS= read -r -d '' file; do
+    [[ $file == "$CLIENT_DIR"/* ]] || continue
+    case $file in
+        *.elm) ELM_FILES+=("$file") ;;
+        *.ts | *.json | *.css | *.md) ESLINT_FILES+=("$file") ;;
+    esac
+done < <(git diff --cached --name-only --diff-filter=ACMR -z)
+
+if ((${#ELM_FILES[@]} == 0 && ${#ESLINT_FILES[@]} == 0)); then
+    exit 0
+fi
+
+BIN="$ROOT/$CLIENT_DIR/node_modules/.bin"
+if [[ ! -x $BIN/elm-format || ! -x $BIN/eslint ]]; then
+    echo "pre-commit: the client's tools are not installed. Run 'make setup'." >&2
+    exit 1
+fi
+
+# ESLint resolves its config and tsconfig from the client directory.
+cd "$CLIENT_DIR" || exit 1
+failed=0
+
+# `git show :<path>` prints the staged blob; both tools read it from stdin.
+unformatted=()
+# (The ${a[@]+...} form keeps empty arrays safe under `set -u` in bash 3.2.)
+for file in ${ELM_FILES[@]+"${ELM_FILES[@]}"}; do
+    git show ":$file" | "$BIN/elm-format" --stdin --validate >/dev/null 2>&1 ||
+        unformatted+=("$file")
+done
+if ((${#unformatted[@]} > 0)); then
+    echo "pre-commit: these staged Elm files are not formatted:" >&2
+    printf '  %s\n' "${unformatted[@]}" >&2
+    failed=1
+fi
+
+eslint_failed=0
+for file in ${ESLINT_FILES[@]+"${ESLINT_FILES[@]}"}; do
+    git show ":$file" |
+        "$BIN/eslint" --no-warn-ignored --stdin --stdin-filename "${file#"$CLIENT_DIR"/}" >&2 ||
+        eslint_failed=1
+done
+if ((eslint_failed)); then
+    echo "pre-commit: ESLint found problems in staged files (see above)." >&2
+    failed=1
+fi
+
+if ((failed)); then
+    {
+        echo
+        echo "Run 'make fmt' to fix formatting, fix any remaining lint errors by hand,"
+        echo "then stage the files again and commit."
+    } >&2
+    exit 1
+fi

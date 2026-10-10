@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+elm-stuff/
+
+# Build output
+dist/
+
+# Playwright
+playwright-report/
+test-results/
+
+# OS / editors
+.DS_Store

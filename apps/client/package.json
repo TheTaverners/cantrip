@@ -1,0 +1,46 @@
+{
+  "name": "@cantrip/client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "fmt": "npm run fmt:elm && npm run fmt:eslint",
+    "fmt:elm": "elm-format . --yes",
+    "fmt:eslint": "eslint --fix .",
+    "fmt-check": "npm run fmt-check:elm && npm run fmt-check:eslint",
+    "fmt-check:elm": "elm-format . --validate",
+    "fmt-check:eslint": "eslint --config eslint.format.config.ts .",
+    "lint": "npm run lint:elm && npm run lint:eslint && npm run lint:tsc",
+    "lint:elm": "elm-review",
+    "lint:eslint": "eslint .",
+    "lint:tsc": "tsc --noEmit",
+    "test": "elm-test-rs",
+    "e2e": "playwright test",
+    "e2e:install": "playwright install chromium webkit"
+  },
+  "volta": {
+    "node": "24.19.0"
+  },
+  "devDependencies": {
+    "@eslint/css": "2.0.0",
+    "@eslint/js": "10.0.1",
+    "@eslint/json": "2.1.1",
+    "@eslint/markdown": "8.0.3",
+    "@playwright/test": "1.64.0",
+    "@stylistic/eslint-plugin": "5.10.0",
+    "@types/node": "24.19.2",
+    "elm": "0.19.3-0",
+    "elm-format": "0.8.8",
+    "elm-review": "2.13.5",
+    "elm-test-rs": "3.2.0-0",
+    "eslint": "10.12.0",
+    "jiti": "2.7.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.1",
+    "vite": "8.3.4",
+    "vite-plugin-elm": "3.0.1"
+  }
+}
