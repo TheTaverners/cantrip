@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      client: ${{ steps.filter.outputs.client }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: filter
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: |
+            client:
+              - 'apps/client/**'
+              - '.github/workflows/**'
+              - 'Makefile'
+
+  client:
+    name: Client
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/client
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          # Reads the `volta.node` pin, so CI and local Node never drift.
+          node-version-file: apps/client/package.json
+          cache: npm
+          cache-dependency-path: apps/client/package-lock.json
+      - name: Cache Elm packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.elm
+          key: elm-${{ runner.os }}-${{ hashFiles('apps/client/elm.json') }}
+          restore-keys: elm-${{ runner.os }}-
+      - run: npm ci
+      - run: make build
+        working-directory: .
+
+  # Single required status check: fails only if a needed job failed or was
+  # cancelled. Jobs skipped by path filters count as success.
+  ci-ok:
+    name: ci-ok
+    needs: [changes, client]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check needed jobs
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Needed job results: $RESULTS"
+          for result in $RESULTS; do
+            case "$result" in
+              success|skipped) ;;
+              *) echo "A needed job ended with: $result"; exit 1 ;;
+            esac
+          done
