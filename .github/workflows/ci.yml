@@ -55,7 +55,7 @@ jobs:
           key: elm-${{ runner.os }}-${{ hashFiles('apps/client/elm.json', 'apps/client/review/elm.json') }}
           restore-keys: elm-${{ runner.os }}-
       - run: npm ci
-      - run: make fmt-check lint build
+      - run: make fmt-check lint test build
         working-directory: .
 
   # Single required status check: fails only if a needed job failed or was

@@ -12,7 +12,8 @@
     "fmt-check": "npm run fmt-check:elm",
     "fmt-check:elm": "elm-format . --validate",
     "lint": "npm run lint:elm",
-    "lint:elm": "elm-review"
+    "lint:elm": "elm-review",
+    "test": "elm-test-rs"
   },
   "volta": {
     "node": "24.19.0"

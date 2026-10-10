@@ -7,7 +7,7 @@ CLIENT_DIR := apps/client
 
 .DEFAULT_GOAL := help
 
-.PHONY: help setup dev fmt fmt-check lint build check
+.PHONY: help setup dev fmt fmt-check lint test build check
 
 help: ## List the available targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | \
@@ -35,7 +35,10 @@ fmt-check: ## Fail if any file is not formatted
 lint: ## Run static analysis (elm-review)
 	cd $(CLIENT_DIR) && npm run lint
 
+test: ## Run the Elm unit and program tests
+	cd $(CLIENT_DIR) && npm run test
+
 build: ## Build the optimised production client bundle
 	cd $(CLIENT_DIR) && npm run build
 
-check: fmt-check lint build ## Run every check CI runs (except e2e)
+check: fmt-check lint test build ## Run every check CI runs (except e2e)
