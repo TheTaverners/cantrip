@@ -7,13 +7,13 @@ CLIENT_DIR := apps/client
 
 .DEFAULT_GOAL := help
 
-.PHONY: help setup dev fmt fmt-check lint test e2e build lint-workflows check
+.PHONY: help setup setup-hooks dev fmt fmt-check lint test e2e build lint-workflows test-hooks check
 
 help: ## List the available targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*## "}; {printf "  %-16s %s\n", $$1, $$2}'
 
-setup: ## Install machine tools (Homebrew bundle), npm dependencies and Playwright browsers
+setup: ## Install machine tools (Homebrew bundle), npm dependencies, Playwright browsers and git hooks
 	@command -v brew >/dev/null 2>&1 || { \
 		echo "error: Homebrew is required. Install it from https://brew.sh and re-run 'make setup'." >&2; \
 		exit 1; }
@@ -23,6 +23,10 @@ setup: ## Install machine tools (Homebrew bundle), npm dependencies and Playwrig
 		exit 1; }
 	cd $(CLIENT_DIR) && npm ci
 	cd $(CLIENT_DIR) && npm run e2e:install
+	@$(MAKE) -s setup-hooks
+
+setup-hooks: ## Use the versioned git hooks in .githooks
+	git config core.hooksPath .githooks
 
 dev: ## Start the client dev server
 	cd $(CLIENT_DIR) && npm run dev
@@ -51,4 +55,7 @@ lint-workflows: ## Lint the GitHub Actions workflows with actionlint
 		exit 1; }
 	actionlint
 
-check: fmt-check lint test build lint-workflows ## Run every check CI runs (except e2e)
+test-hooks: ## Test the git hooks in a throwaway copy of the repository
+	scripts/test-hooks.sh
+
+check: fmt-check lint test build lint-workflows test-hooks ## Run every check CI runs (except e2e)
