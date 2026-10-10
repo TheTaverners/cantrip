@@ -18,19 +18,21 @@ The Cantrip web client: an Elm 0.19.3 application built with [Vite](https://vite
 
 Run these here, or through the root `Makefile`.
 
-| Script              | What it does                                                 |
-| ------------------- | ------------------------------------------------------------ |
-| `npm run dev`       | Start the dev server with hot reload.                        |
-| `npm run build`     | Build the production bundle into `dist/`.                    |
-| `npm run preview`   | Serve the production bundle from `dist/`.                    |
-| `npm run fmt`       | Apply ESLint fixes (formatting included).                    |
-| `npm run fmt-check` | Run ESLint's formatting rules only; fail on any violation.   |
-| `npm run lint`      | Run ESLint, then the TypeScript type check (`tsc --noEmit`). |
+| Script              | What it does                                                  |
+| ------------------- | ------------------------------------------------------------- |
+| `npm run dev`       | Start the dev server with hot reload.                         |
+| `npm run build`     | Build the production bundle into `dist/`.                     |
+| `npm run preview`   | Serve the production bundle from `dist/`.                     |
+| `npm run fmt`       | Format Elm with elm-format, then apply ESLint fixes.          |
+| `npm run fmt-check` | Fail if an Elm file or a TypeScript file is not formatted.    |
+| `npm run lint`      | Run elm-review, ESLint, then the type check (`tsc --noEmit`). |
 
 ## Toolchain
 
 - Node is pinned by the `volta` field in `package.json`. CI reads the same pin.
 - The Elm compiler is the `elm` npm package, pinned exactly in `devDependencies`. `.npmrc` makes npm save every dependency exactly.
+- elm-format and elm-review are pinned the same way. `fmt` and `lint` delegate to per-tool scripts (`fmt:elm`, `fmt-check:elm`, `lint:elm`) so other tools can join them.
+- elm-review's configuration lives in `review/`. It started from the [jfmengels application template](https://github.com/jfmengels/elm-review-config/tree/master/application); its `elm.json` was bumped from 0.19.1 to 0.19.3 by hand, since elm-review refuses to compile a review project for another Elm version. Elm packages there are updated by hand too.
 
 ## Formatting and linting
 
@@ -39,7 +41,7 @@ ESLint formats and lints everything that isn't Elm. There is no Prettier.
 - TypeScript: typescript-eslint `strictTypeChecked` and `stylisticTypeChecked`, plus `@stylistic/eslint-plugin` for formatting (double quotes, semicolons, 2-space indent). Type assertions are banned.
 - JSON, CSS and Markdown: `@eslint/json`, `@eslint/css` and `@eslint/markdown`. They are linted, but their whitespace formatting is not enforced.
 
-`fmt`, `fmt-check` and `lint` aggregate per-tool scripts (`fmt:eslint`, `fmt-check:eslint`, `lint:eslint`, `lint:tsc`), so another tool plugs in as one more `<task>:<tool>` script.
+The ESLint and TypeScript parts of `fmt`, `fmt-check` and `lint` are the `fmt:eslint`, `fmt-check:eslint`, `lint:eslint` and `lint:tsc` scripts.
 
 ## Known quirk
 

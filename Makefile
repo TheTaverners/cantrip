@@ -32,7 +32,7 @@ fmt: ## Format all code
 fmt-check: ## Fail if any file is not formatted
 	cd $(CLIENT_DIR) && npm run fmt-check
 
-lint: ## Run the linters and the TypeScript type check
+lint: ## Run the linters (elm-review, ESLint) and the TypeScript type check
 	cd $(CLIENT_DIR) && npm run lint
 
 build: ## Build the optimised production client bundle
