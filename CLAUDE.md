@@ -13,9 +13,14 @@ Run from the repo root. Each Make target delegates to an npm script in `apps/cli
 - `make setup`: `brew bundle` (Brewfile), then `npm ci` in the client.
 - `make dev`: Vite dev server on http://localhost:5173 (`npm run dev`).
 - `make build`: production bundle in `apps/client/dist`, Elm compiled with `--optimize` (`npm run build`).
-- `make check`: everything CI runs except e2e. Today that is only `build`.
+- `make fmt`: apply ESLint fixes to the client's non-Elm files (`npm run fmt`).
+- `make fmt-check`: ESLint formatting rules only, via `eslint.format.config.ts` (`npm run fmt-check`).
+- `make lint`: ESLint on TS/JSON/CSS/Markdown, then `tsc --noEmit` (`npm run lint`). Single file: `npx eslint <path>` in `apps/client`.
+- `make check`: everything CI runs except e2e (`fmt-check lint build`).
 
-There are no tests yet. Don't invent lint/test commands; when one is added, list it here, including how to run a single test.
+There are no tests yet. Don't invent test commands; when one is added, list it here, including how to run a single test.
+
+TypeScript (only the bootstrap `src/main.ts`) uses the strictest tsconfig. The Elm entry point is typed by hand in `src/elm.d.ts`: update it when `Main` gains flags or ports. ESLint is the only formatter for non-Elm files (no Prettier): double quotes, semicolons, 2-space indent. Type assertions (`as`) are banned.
 
 Node is pinned by the `volta` field in `apps/client/package.json`; CI reads the same pin. npm deps are saved exact (`apps/client/.npmrc`).
 
