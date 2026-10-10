@@ -13,12 +13,15 @@ Run from the repo root. Each Make target delegates to an npm script in `apps/cli
 - `make setup`: `brew bundle` (Brewfile), then `npm ci` in the client.
 - `make dev`: Vite dev server on http://localhost:5173 (`npm run dev`).
 - `make build`: production bundle in `apps/client/dist`, Elm compiled with `--optimize` (`npm run build`).
-- `make lint-workflows`: actionlint on `.github/workflows/` (installed by the Brewfile; uses shellcheck on `run:` scripts when it is on the PATH).
-- `make check`: everything CI runs except e2e. Today that is `build` and `lint-workflows`.
+- `make fmt`: format every Elm file in the client with elm-format (`npm run fmt`).
+- `make fmt-check`: fail on unformatted Elm files (`npm run fmt-check`).
+- `make lint`: elm-review with the jfmengels application rules, config in `apps/client/review/` (`npm run lint`). `npx elm-review --fix` in `apps/client` applies automatic fixes.
+- `make lint-workflows`: actionlint on `.github/workflows/` (installed by the Brewfile; uses shellcheck on `run:` scripts when it is on the PATH). Not an npm script.
+- `make check`: everything CI runs except e2e: `fmt-check`, `lint`, `build`, `lint-workflows`.
 
 CI jobs: `changes`, path-filtered `client`, unfiltered `repo` (actionlint, plus the PR-title Conventional Commits check on pull requests, whose regex must stay identical to the commit-msg hook's), and the `ci-ok` aggregator; add every new job to `ci-ok.needs`. Pin every `uses:` by full commit SHA with the version in a trailing comment (`docker://` images: `image:<version>@sha256:<digest>`).
 
-There are no tests yet. Don't invent lint/test commands; when one is added, list it here, including how to run a single test.
+There are no tests yet. Don't invent test commands; when one is added, list it here, including how to run a single test.
 
 Node is pinned by the `volta` field in `apps/client/package.json`; CI reads the same pin. npm deps are saved exact (`apps/client/.npmrc`).
 

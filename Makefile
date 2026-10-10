@@ -7,7 +7,7 @@ CLIENT_DIR := apps/client
 
 .DEFAULT_GOAL := help
 
-.PHONY: help setup dev build lint-workflows check
+.PHONY: help setup dev fmt fmt-check lint build lint-workflows check
 
 help: ## List the available targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | \
@@ -26,6 +26,15 @@ setup: ## Install machine tools (Homebrew bundle) and project dependencies
 dev: ## Start the client dev server
 	cd $(CLIENT_DIR) && npm run dev
 
+fmt: ## Format all code
+	cd $(CLIENT_DIR) && npm run fmt
+
+fmt-check: ## Fail if any file is not formatted
+	cd $(CLIENT_DIR) && npm run fmt-check
+
+lint: ## Run static analysis (elm-review)
+	cd $(CLIENT_DIR) && npm run lint
+
 build: ## Build the optimised production client bundle
 	cd $(CLIENT_DIR) && npm run build
 
@@ -35,4 +44,4 @@ lint-workflows: ## Lint the GitHub Actions workflows with actionlint
 		exit 1; }
 	actionlint
 
-check: build lint-workflows ## Run every check CI runs (except e2e)
+check: fmt-check lint build lint-workflows ## Run every check CI runs (except e2e)
