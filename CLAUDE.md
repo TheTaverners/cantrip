@@ -2,9 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project state
+## Project layout
 
-`cantrip` has no application code, build system, or tests yet. The only commit is an empty initial commit. Don't invent build/lint/test commands. When a toolchain is added, update this file with the real commands, including how to run a single test.
+Monorepo. Deployable components live under `apps/` (only `apps/client`, an Elm 0.19.3 SPA built with Vite, exists today). The root stays language-agnostic: no root `package.json`, only the `Makefile`, `Brewfile`, `.editorconfig` and `.gitignore`. CI lives in `.github/workflows/ci.yml`.
+
+## Commands
+
+Run from the repo root. Each Make target delegates to an npm script in `apps/client` (run `npm run <script>` there for the same thing).
+
+- `make setup`: `brew bundle` (Brewfile), then `npm ci` in the client.
+- `make dev`: Vite dev server on http://localhost:5173 (`npm run dev`).
+- `make build`: production bundle in `apps/client/dist`, Elm compiled with `--optimize` (`npm run build`).
+- `make check`: everything CI runs except e2e. Today that is only `build`.
+
+There are no tests yet. Don't invent lint/test commands; when one is added, list it here, including how to run a single test.
+
+Node is pinned by the `volta` field in `apps/client/package.json`; CI reads the same pin. npm deps are saved exact (`apps/client/.npmrc`).
 
 ## Agent skills layout
 
