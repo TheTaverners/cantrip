@@ -21,7 +21,11 @@ type Msg
 {-| The navigation key lives next to the model, outside of it, so that `init`,
 `update` and `view` stay runnable under elm-program-test, which has no key.
 -}
-main : Program () ( Browser.Navigation.Key, Model ) Msg
+type alias KeyedModel =
+    ( Browser.Navigation.Key, Model )
+
+
+main : Program () KeyedModel Msg
 main =
     Browser.application
         { init = applicationInit
@@ -33,17 +37,17 @@ main =
         }
 
 
-applicationInit : () -> Url -> Browser.Navigation.Key -> ( ( Browser.Navigation.Key, Model ), Cmd Msg )
+applicationInit : () -> Url -> Browser.Navigation.Key -> ( KeyedModel, Cmd Msg )
 applicationInit flags url key =
     withKey key (init flags url ())
 
 
-applicationUpdate : Msg -> ( Browser.Navigation.Key, Model ) -> ( ( Browser.Navigation.Key, Model ), Cmd Msg )
+applicationUpdate : Msg -> KeyedModel -> ( KeyedModel, Cmd Msg )
 applicationUpdate msg ( key, model ) =
     withKey key (update msg model)
 
 
-withKey : Browser.Navigation.Key -> ( Model, Effect Msg ) -> ( ( Browser.Navigation.Key, Model ), Cmd Msg )
+withKey : Browser.Navigation.Key -> ( Model, Effect Msg ) -> ( KeyedModel, Cmd Msg )
 withKey key ( model, effect ) =
     ( ( key, model ), Effect.toCmd key effect )
 

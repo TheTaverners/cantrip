@@ -4,7 +4,7 @@ import Expect
 import Fuzz exposing (Fuzzer)
 import Route exposing (Route)
 import Test exposing (Test)
-import Url exposing (Url)
+import TestUrl
 
 
 suite : Test
@@ -13,12 +13,12 @@ suite =
         [ Test.fuzz routeFuzzer "a route survives a round-trip through its path" <|
             \route ->
                 Route.toPath route
-                    |> urlFromPath
+                    |> TestUrl.fromPath
                     |> Route.fromUrl
                     |> Expect.equal route
         , Test.test "an unknown path parses to NotFound" <|
             \() ->
-                urlFromPath "/no/such/page"
+                TestUrl.fromPath "/no/such/page"
                     |> Route.fromUrl
                     |> Expect.equal Route.NotFound
         ]
@@ -27,14 +27,3 @@ suite =
 routeFuzzer : Fuzzer Route
 routeFuzzer =
     Fuzz.oneOfValues [ Route.Home, Route.NotFound ]
-
-
-urlFromPath : String -> Url
-urlFromPath path =
-    { protocol = Url.Https
-    , host = "cantrip.test"
-    , port_ = Nothing
-    , path = path
-    , query = Nothing
-    , fragment = Nothing
-    }

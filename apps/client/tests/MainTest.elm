@@ -7,6 +7,7 @@ import ProgramTest exposing (ProgramTest)
 import SimulatedEffects
 import Test exposing (Test)
 import Test.Html.Selector
+import TestUrl
 
 
 suite : Test
@@ -26,7 +27,7 @@ suite =
             \() ->
                 start "/"
                     |> ProgramTest.clickLink "Wander off the map" "/not-found"
-                    |> ProgramTest.ensureBrowserUrl (Expect.equal "https://cantrip.test/not-found")
+                    |> ProgramTest.ensureBrowserUrl (Expect.equal (TestUrl.base ++ "/not-found"))
                     |> ProgramTest.ensureViewHas [ Test.Html.Selector.text "Page not found" ]
                     |> expectTitle "Page not found · Cantrip"
         ]
@@ -41,7 +42,7 @@ start path =
         , onUrlRequest = Main.onUrlRequest
         , onUrlChange = Main.onUrlChange
         }
-        |> ProgramTest.withBaseUrl ("https://cantrip.test" ++ path)
+        |> ProgramTest.withBaseUrl (TestUrl.base ++ path)
         |> ProgramTest.withSimulatedEffects SimulatedEffects.simulate
         |> ProgramTest.start ()
 
