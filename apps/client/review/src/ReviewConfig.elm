@@ -52,6 +52,9 @@ config =
         -- some constructors (e.g. Batch) exist before their first caller.
         |> Rule.ignoreErrorsForFiles [ "src/Effect.elm" ]
     , NoUnused.CustomTypeConstructorArgs.rule
+        -- Games.SceneId has no string form (no URL names a Scene): its
+        -- argument is only read by `==`, which this rule can't see.
+        |> Rule.ignoreErrorsForFiles [ "src/Games.elm" ]
     , NoUnused.Dependencies.rule
     , NoUnused.Exports.rule
     , NoUnused.Parameters.rule
