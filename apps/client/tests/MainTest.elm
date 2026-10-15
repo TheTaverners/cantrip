@@ -66,6 +66,43 @@ suite =
                             , Test.Html.Query.hasNot [ Test.Html.Selector.text "Active" ]
                             ]
                         )
+        , Test.test "each non-active Scene offers \"Make active\", and the Active Scene shows only the badge" <|
+            \() ->
+                start (seededGamePath 0)
+                    |> ProgramTest.expectView
+                        (Test.Html.Query.findAll [ Test.Html.Selector.tag "li" ]
+                            >> Expect.all
+                                [ Test.Html.Query.index 0 >> Test.Html.Query.has [ makeActiveButton ]
+                                , Test.Html.Query.index 1 >> Expect.all [ Test.Html.Query.has [ Test.Html.Selector.text "Active" ], Test.Html.Query.hasNot [ makeActiveButton ] ]
+                                , Test.Html.Query.index 2 >> Test.Html.Query.has [ makeActiveButton ]
+                                ]
+                        )
+        , Test.test "making a Scene active moves the badge to it from the previous Active Scene" <|
+            \() ->
+                start (seededGamePath 0)
+                    |> makeSceneActive "The Crypt Heart"
+                    |> ProgramTest.expectView
+                        (Test.Html.Query.findAll [ Test.Html.Selector.tag "li" ]
+                            >> Expect.all
+                                [ Test.Html.Query.index 0 >> Expect.all [ Test.Html.Query.hasNot [ Test.Html.Selector.text "Active" ], Test.Html.Query.has [ makeActiveButton ] ]
+                                , Test.Html.Query.index 1 >> Expect.all [ Test.Html.Query.hasNot [ Test.Html.Selector.text "Active" ], Test.Html.Query.has [ makeActiveButton ] ]
+                                , Test.Html.Query.index 2 >> Expect.all [ Test.Html.Query.has [ Test.Html.Selector.text "Active" ], Test.Html.Query.hasNot [ makeActiveButton ] ]
+                                ]
+                        )
+        , Test.test "after making a Scene active, the player view shows it" <|
+            \() ->
+                start (seededGamePath 0)
+                    |> makeSceneActive "The Drowned Gate"
+                    |> ProgramTest.clickLink "Open player view" (seededPlayerPath 0)
+                    |> ProgramTest.ensureViewHas [ Test.Html.Selector.tag "h1", Test.Html.Selector.containing [ Test.Html.Selector.text "The Drowned Gate" ] ]
+                    |> ProgramTest.expectViewHasNot [ Test.Html.Selector.text "Hall of Echoes" ]
+        , Test.test "after making a Scene active on a Game that had no Active Scene, the player view shows it instead of waiting" <|
+            \() ->
+                start (seededGamePath 1)
+                    |> makeSceneActive "The Pickpocket's Alley"
+                    |> ProgramTest.clickLink "Open player view" (seededPlayerPath 1)
+                    |> ProgramTest.ensureViewHas [ Test.Html.Selector.tag "h1", Test.Html.Selector.containing [ Test.Html.Selector.text "The Pickpocket's Alley" ] ]
+                    |> ProgramTest.expectViewHasNot [ Test.Html.Selector.text "Waiting for the Game Master…" ]
         , Test.test "\"← All games\" returns from a Game page to the Game list" <|
             \() ->
                 start (seededGamePath 1)
@@ -76,6 +113,45 @@ suite =
         , Test.test "a Game page for an unknown Game shows the Game-not-found page under its own title" <|
             \() ->
                 start (Route.toPath (Route.Game (Games.gameIdFromString "no-such-game")))
+                    |> ProgramTest.ensureViewHas [ Test.Html.Selector.text "Game not found" ]
+                    |> ProgramTest.ensureViewHasNot [ Test.Html.Selector.text "Page not found" ]
+                    |> expectTitle "Game not found · Cantrip"
+        , Test.test "\"Open player view\" opens the player view, which shows the Game title and the Active Scene title" <|
+            \() ->
+                start (seededGamePath 0)
+                    |> ProgramTest.clickLink "Open player view" (seededPlayerPath 0)
+                    |> ProgramTest.ensureBrowserUrl (Expect.equal (TestUrl.base ++ seededPlayerPath 0))
+                    |> ProgramTest.ensureViewHas [ Test.Html.Selector.text "The Sunken Crypt" ]
+                    |> ProgramTest.ensureViewHas [ Test.Html.Selector.tag "h1", Test.Html.Selector.containing [ Test.Html.Selector.text "Hall of Echoes" ] ]
+                    |> expectTitle "The Sunken Crypt · Cantrip"
+        , Test.test "the player view is pushed onto the history, so going back returns to the Game page" <|
+            \() ->
+                start (seededGamePath 0)
+                    |> ProgramTest.clickLink "Open player view" (seededPlayerPath 0)
+                    |> ProgramTest.ensureBrowserHistory (List.head >> Expect.equal (Just (TestUrl.base ++ seededGamePath 0)))
+                    |> ProgramTest.routeChange (TestUrl.base ++ seededGamePath 0)
+                    |> ProgramTest.ensureViewHas [ Test.Html.Selector.text "Open player view" ]
+                    |> expectTitle "The Sunken Crypt · Cantrip"
+        , Test.test "the player view of a Game without an Active Scene shows that the Players wait for the Game Master" <|
+            \() ->
+                start (seededPlayerPath 1)
+                    |> ProgramTest.ensureViewHas [ Test.Html.Selector.text "Market Day in Brindle", Test.Html.Selector.text "Waiting for the Game Master…" ]
+                    |> ProgramTest.ensureViewHasNot [ Test.Html.Selector.text "The Square" ]
+                    |> expectTitle "Market Day in Brindle · Cantrip"
+        , Test.test "the player view has no management actions and no link into Game Master mode" <|
+            \() ->
+                start (seededPlayerPath 0)
+                    |> ProgramTest.expectView
+                        (Expect.all
+                            [ Test.Html.Query.findAll [ Test.Html.Selector.tag "a" ] >> Test.Html.Query.count (Expect.equal 0)
+                            , Test.Html.Query.findAll [ Test.Html.Selector.tag "button" ] >> Test.Html.Query.count (Expect.equal 0)
+                            , Test.Html.Query.findAll [ Test.Html.Selector.tag "input" ] >> Test.Html.Query.count (Expect.equal 0)
+                            , Test.Html.Query.findAll [ Test.Html.Selector.tag "form" ] >> Test.Html.Query.count (Expect.equal 0)
+                            ]
+                        )
+        , Test.test "the player view for an unknown Game shows the Game-not-found page under its own title" <|
+            \() ->
+                start (Route.toPath (Route.Play (Games.gameIdFromString "no-such-game")))
                     |> ProgramTest.ensureViewHas [ Test.Html.Selector.text "Game not found" ]
                     |> ProgramTest.ensureViewHasNot [ Test.Html.Selector.text "Page not found" ]
                     |> expectTitle "Game not found · Cantrip"
@@ -301,6 +377,32 @@ seededGamePath index =
         |> List.head
         |> Maybe.map (Games.gameId >> Route.Game >> Route.toPath)
         |> Maybe.withDefault "/no-such-seeded-game"
+
+
+{-| The player view path of the seeded Game at this position in the Game
+list.
+-}
+seededPlayerPath : Int -> String
+seededPlayerPath index =
+    Games.list Games.seed
+        |> List.drop index
+        |> List.head
+        |> Maybe.map (Games.gameId >> Route.Play >> Route.toPath)
+        |> Maybe.withDefault "/no-such-seeded-game"
+
+
+{-| Click "Make active" in the row of the Scene with this title.
+-}
+makeSceneActive : String -> ProgramTest model msg effect -> ProgramTest model msg effect
+makeSceneActive sceneTitle =
+    ProgramTest.within
+        (Test.Html.Query.find [ Test.Html.Selector.tag "li", Test.Html.Selector.containing [ Test.Html.Selector.text sceneTitle ] ])
+        (ProgramTest.clickButton "Make active")
+
+
+makeActiveButton : Test.Html.Selector.Selector
+makeActiveButton =
+    Test.Html.Selector.all [ Test.Html.Selector.tag "button", Test.Html.Selector.containing [ Test.Html.Selector.text "Make active" ] ]
 
 
 {-| elm-program-test does not expose the document title, so read it from the
