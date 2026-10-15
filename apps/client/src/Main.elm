@@ -25,6 +25,7 @@ type alias Model =
 type Msg
     = UrlRequested Browser.UrlRequest
     | UrlChanged Url
+    | MakeActiveClicked Games.GameId Games.SceneId
 
 
 {-| The navigation key lives next to the model, outside of it, so that `init`,
@@ -78,6 +79,9 @@ update msg model =
         UrlChanged url ->
             ( { model | route = Route.fromUrl url }, Effect.None )
 
+        MakeActiveClicked id activeId ->
+            ( { model | games = Games.makeActive id activeId model.games }, Effect.None )
+
 
 view : Model -> Browser.Document Msg
 view model =
@@ -88,7 +92,7 @@ view model =
         Route.Game id ->
             case Games.get id model.games of
                 Just game ->
-                    Page.Game.view game
+                    Page.Game.view { onMakeActive = MakeActiveClicked id } game
 
                 Nothing ->
                     Page.GameNotFound.view

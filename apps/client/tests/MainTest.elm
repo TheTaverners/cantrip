@@ -61,6 +61,43 @@ suite =
                             , Test.Html.Query.hasNot [ Test.Html.Selector.text "Active" ]
                             ]
                         )
+        , Test.test "each non-active Scene offers \"Make active\", and the Active Scene shows only the badge" <|
+            \() ->
+                start (seededGamePath 0)
+                    |> ProgramTest.expectView
+                        (Test.Html.Query.findAll [ Test.Html.Selector.tag "li" ]
+                            >> Expect.all
+                                [ Test.Html.Query.index 0 >> Test.Html.Query.has [ makeActiveButton ]
+                                , Test.Html.Query.index 1 >> Expect.all [ Test.Html.Query.has [ Test.Html.Selector.text "Active" ], Test.Html.Query.hasNot [ makeActiveButton ] ]
+                                , Test.Html.Query.index 2 >> Test.Html.Query.has [ makeActiveButton ]
+                                ]
+                        )
+        , Test.test "making a Scene active moves the badge to it from the previous Active Scene" <|
+            \() ->
+                start (seededGamePath 0)
+                    |> makeSceneActive "The Crypt Heart"
+                    |> ProgramTest.expectView
+                        (Test.Html.Query.findAll [ Test.Html.Selector.tag "li" ]
+                            >> Expect.all
+                                [ Test.Html.Query.index 0 >> Expect.all [ Test.Html.Query.hasNot [ Test.Html.Selector.text "Active" ], Test.Html.Query.has [ makeActiveButton ] ]
+                                , Test.Html.Query.index 1 >> Expect.all [ Test.Html.Query.hasNot [ Test.Html.Selector.text "Active" ], Test.Html.Query.has [ makeActiveButton ] ]
+                                , Test.Html.Query.index 2 >> Expect.all [ Test.Html.Query.has [ Test.Html.Selector.text "Active" ], Test.Html.Query.hasNot [ makeActiveButton ] ]
+                                ]
+                        )
+        , Test.test "after making a Scene active, the player view shows it" <|
+            \() ->
+                start (seededGamePath 0)
+                    |> makeSceneActive "The Drowned Gate"
+                    |> ProgramTest.clickLink "Open player view" (seededPlayerPath 0)
+                    |> ProgramTest.ensureViewHas [ Test.Html.Selector.tag "h1", Test.Html.Selector.containing [ Test.Html.Selector.text "The Drowned Gate" ] ]
+                    |> ProgramTest.expectViewHasNot [ Test.Html.Selector.text "Hall of Echoes" ]
+        , Test.test "after making a Scene active on a Game that had no Active Scene, the player view shows it instead of waiting" <|
+            \() ->
+                start (seededGamePath 1)
+                    |> makeSceneActive "The Pickpocket's Alley"
+                    |> ProgramTest.clickLink "Open player view" (seededPlayerPath 1)
+                    |> ProgramTest.ensureViewHas [ Test.Html.Selector.tag "h1", Test.Html.Selector.containing [ Test.Html.Selector.text "The Pickpocket's Alley" ] ]
+                    |> ProgramTest.expectViewHasNot [ Test.Html.Selector.text "Waiting for the Game Master…" ]
         , Test.test "\"← All games\" returns from a Game page to the Game list" <|
             \() ->
                 start (seededGamePath 1)
@@ -157,6 +194,20 @@ seededPlayerPath index =
         |> List.head
         |> Maybe.map (Games.gameId >> Route.Play >> Route.toPath)
         |> Maybe.withDefault "/no-such-seeded-game"
+
+
+{-| Click "Make active" in the row of the Scene with this title.
+-}
+makeSceneActive : String -> ProgramTest model msg effect -> ProgramTest model msg effect
+makeSceneActive sceneTitle =
+    ProgramTest.within
+        (Test.Html.Query.find [ Test.Html.Selector.tag "li", Test.Html.Selector.containing [ Test.Html.Selector.text sceneTitle ] ])
+        (ProgramTest.clickButton "Make active")
+
+
+makeActiveButton : Test.Html.Selector.Selector
+makeActiveButton =
+    Test.Html.Selector.all [ Test.Html.Selector.tag "button", Test.Html.Selector.containing [ Test.Html.Selector.text "Make active" ] ]
 
 
 {-| elm-program-test does not expose the document title, so read it from the

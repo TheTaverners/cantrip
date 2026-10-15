@@ -29,7 +29,7 @@ The Cantrip web client: an Elm 0.19.3 application built with [Vite](https://vite
 ## Tests
 
 - `tests/RouteTest.elm` tests the `Route` interface: a fuzz test that route → path → route round-trips (Game and player routes with arbitrary non-empty ids), and checks that unknown paths, `/games/` and `/play` parse to `NotFound`.
-- `tests/TitleTest.elm` and `tests/GamesTest.elm` test the domain through its public interface: title trimming and refusal, the seed, lookup by id, and ids round-tripping through strings.
+- `tests/TitleTest.elm` and `tests/GamesTest.elm` test the domain through its public interface: title trimming and refusal, the seed, lookup by id, making a Scene active (including a fuzz test over sequences of "make active"), and ids round-tripping through strings.
 - `tests/MainTest.elm` runs the whole program with [elm-program-test](https://package.elm-lang.org/packages/avh4/elm-program-test/latest/), starting from a URL and asserting on what the page shows. elm-program-test has no title assertion, so `expectTitle` reads the title from `Main.view`.
 - `e2e/smoke.spec.ts` is the browser smoke test: the production bundle, served by `vite preview`, lists the seeded Games under the title "Cantrip" in Chromium and WebKit. `playwright.config.ts` builds and starts the server itself. Single test: `npx playwright test e2e/smoke.spec.ts`, with `-g "<title>"` or `--project=webkit` to narrow it; reports land in `playwright-report/`.
 - Test dependencies are listed by hand in the `test-dependencies` block of `elm.json` (elm-json does not work with Elm 0.19.3).

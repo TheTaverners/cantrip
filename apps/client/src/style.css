@@ -78,6 +78,17 @@ a {
   background: var(--color-surface);
 }
 
+.scene-list__action {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--color-accent);
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
 .badge {
   padding: 0 0.5rem;
   border: 1px solid var(--color-accent);
