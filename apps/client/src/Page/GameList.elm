@@ -1,12 +1,14 @@
 module Page.GameList exposing (view)
 
-{-| The Game list, in Game Master mode: every Game, in creation order.
+{-| The Game list, in Game Master mode: every Game, in creation order, each
+linking to its Game page.
 -}
 
 import Browser
 import Games exposing (Game, Games)
 import Html exposing (Html)
 import Html.Attributes
+import Route
 import Title
 
 
@@ -26,4 +28,6 @@ view games =
 viewGame : Game -> Html msg
 viewGame game =
     Html.li [ Html.Attributes.class "game-list__item" ]
-        [ Html.text (Title.toString (Games.title game)) ]
+        [ Html.a [ Html.Attributes.href (Route.toPath (Route.Game (Games.gameId game))) ]
+            [ Html.text (Title.toString (Games.title game)) ]
+        ]

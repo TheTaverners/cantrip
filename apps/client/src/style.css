@@ -56,3 +56,32 @@ a {
   padding: var(--space-m);
   background: var(--color-surface);
 }
+
+.page__back {
+  display: inline-block;
+  margin-bottom: var(--space-m);
+}
+
+/* Scene list. */
+.scene-list {
+  margin: var(--space-l) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.scene-list__item {
+  display: flex;
+  gap: var(--space-m);
+  align-items: center;
+  margin-bottom: var(--space-m);
+  padding: var(--space-m);
+  background: var(--color-surface);
+}
+
+.badge {
+  padding: 0 0.5rem;
+  border: 1px solid var(--color-accent);
+  border-radius: 999px;
+  color: var(--color-accent);
+  font-size: 0.875rem;
+}

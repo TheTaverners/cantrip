@@ -2,6 +2,7 @@ module RouteTest exposing (suite)
 
 import Expect
 import Fuzz exposing (Fuzzer)
+import Games
 import Route exposing (Route)
 import Test exposing (Test)
 import TestUrl
@@ -21,9 +22,24 @@ suite =
                 TestUrl.fromPath "/no/such/page"
                     |> Route.fromUrl
                     |> Expect.equal Route.NotFound
+        , Test.test "a Game page path without an id parses to NotFound" <|
+            \() ->
+                TestUrl.fromPath "/games/"
+                    |> Route.fromUrl
+                    |> Expect.equal Route.NotFound
         ]
 
 
 routeFuzzer : Fuzzer Route
 routeFuzzer =
-    Fuzz.oneOfValues [ Route.Home, Route.NotFound ]
+    Fuzz.oneOf
+        [ Fuzz.oneOfValues [ Route.Home, Route.NotFound ]
+        , Fuzz.map (Games.gameIdFromString >> Route.Game) gameIdFuzzer
+        ]
+
+
+{-| Any non-empty string: the collection never generates an empty id.
+-}
+gameIdFuzzer : Fuzzer String
+gameIdFuzzer =
+    Fuzz.map2 String.cons Fuzz.char Fuzz.string

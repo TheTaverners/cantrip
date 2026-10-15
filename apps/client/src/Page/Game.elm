@@ -1,0 +1,44 @@
+module Page.Game exposing (view)
+
+{-| The Game page, in Game Master mode: one Game's title and its Scenes, in
+creation order, with a badge on the Active Scene.
+-}
+
+import Browser
+import Games exposing (Game, Scene, SceneId)
+import Html exposing (Html)
+import Html.Attributes
+import Route
+import Title
+
+
+view : Game -> Browser.Document msg
+view game =
+    let
+        gameTitle : String
+        gameTitle =
+            Title.toString (Games.title game)
+    in
+    { title = gameTitle ++ " · Cantrip"
+    , body =
+        [ Html.main_ [ Html.Attributes.class "page" ]
+            [ Html.a [ Html.Attributes.class "page__back", Html.Attributes.href (Route.toPath Route.Home) ] [ Html.text "← All games" ]
+            , Html.h1 [ Html.Attributes.class "page__title" ] [ Html.text gameTitle ]
+            , Html.ul [ Html.Attributes.class "scene-list" ]
+                (List.map (viewScene (Maybe.map Games.sceneId (Games.activeScene game))) (Games.scenes game))
+            ]
+        ]
+    }
+
+
+viewScene : Maybe SceneId -> Scene -> Html msg
+viewScene activeSceneId scene =
+    Html.li [ Html.Attributes.class "scene-list__item" ]
+        (Html.span [ Html.Attributes.class "scene-list__title" ] [ Html.text (Title.toString (Games.sceneTitle scene)) ]
+            :: (if activeSceneId == Just (Games.sceneId scene) then
+                    [ Html.span [ Html.Attributes.class "badge" ] [ Html.text "Active" ] ]
+
+                else
+                    []
+               )
+        )

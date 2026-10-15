@@ -4,7 +4,9 @@ import Browser
 import Browser.Navigation
 import Effect exposing (Effect)
 import Games exposing (Games)
+import Page.Game
 import Page.GameList
+import Page.GameNotFound
 import Page.NotFound
 import Route exposing (Route)
 import Url exposing (Url)
@@ -81,6 +83,14 @@ view model =
     case model.route of
         Route.Home ->
             Page.GameList.view model.games
+
+        Route.Game id ->
+            case Games.get id model.games of
+                Just game ->
+                    Page.Game.view game
+
+                Nothing ->
+                    Page.GameNotFound.view
 
         Route.NotFound ->
             Page.NotFound.view
