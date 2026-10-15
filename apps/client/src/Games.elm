@@ -1,5 +1,6 @@
 module Games exposing
     ( Games, seed, list, get
+    , createGame, renameGame, deleteGame
     , Game, gameId, title, scenes, activeScene
     , Scene, sceneId, sceneTitle
     , GameId, gameIdToString, gameIdFromString
@@ -14,6 +15,14 @@ bypassed.
 # Collection
 
 @docs Games, seed, list, get
+
+
+# Managing Games
+
+Titles are valid by construction (see `Title`). An operation naming an
+unknown id leaves the collection unchanged.
+
+@docs createGame, renameGame, deleteGame
 
 
 # Game
@@ -154,6 +163,48 @@ get id (Games collection) =
         |> List.filter (\game -> game.id == id)
         |> List.head
         |> Maybe.map Game
+
+
+{-| Add a Game, with no Scenes, at the end of the list.
+-}
+createGame : Title -> Games -> Games
+createGame gameTitle (Games collection) =
+    Games
+        { nextId = collection.nextId + 1
+        , games =
+            collection.games
+                ++ [ { id = GameId (String.fromInt collection.nextId)
+                     , title = gameTitle
+                     , scenes = []
+                     , activeScene = Nothing
+                     }
+                   ]
+        }
+
+
+renameGame : GameId -> Title -> Games -> Games
+renameGame id newTitle (Games collection) =
+    Games
+        { collection
+            | games =
+                List.map
+                    (\game ->
+                        if game.id == id then
+                            { game | title = newTitle }
+
+                        else
+                            game
+                    )
+                    collection.games
+        }
+
+
+{-| Remove a Game and its Scenes. Its id is never handed out again, so it keeps
+naming no Game.
+-}
+deleteGame : GameId -> Games -> Games
+deleteGame id (Games collection) =
+    Games { collection | games = List.filter (\game -> game.id /= id) collection.games }
 
 
 gameId : Game -> GameId
