@@ -153,6 +153,155 @@ suite =
                         |> Games.list
                         |> Expect.equal []
             ]
+        , Test.describe "creating a Scene"
+            [ Test.test "adds it at the end of its Game's Scenes, with its title" <|
+                \() ->
+                    Games.seed
+                        |> Games.createScene (seededGameId 1) (validTitle "The Town Hall")
+                        |> seededSceneTitlesOf 1
+                        |> Expect.equal (Just [ "The Square", "The Pickpocket's Alley", "The Town Hall" ])
+            , Test.test "keeps creation order across several creations" <|
+                \() ->
+                    Games.seed
+                        |> Games.createScene (seededGameId 1) (validTitle "The Town Hall")
+                        |> Games.createScene (seededGameId 1) (validTitle "The Bell Tower")
+                        |> seededSceneTitlesOf 1
+                        |> Expect.equal (Just [ "The Square", "The Pickpocket's Alley", "The Town Hall", "The Bell Tower" ])
+            , Test.test "doesn't make it active, even when its Game has no Active Scene" <|
+                \() ->
+                    Games.seed
+                        |> Games.createScene (seededGameId 1) (validTitle "The Town Hall")
+                        |> seededGameOf 1
+                        |> Maybe.map Games.activeScene
+                        |> Expect.equal (Just Nothing)
+            , Test.test "keeps its Game's Active Scene" <|
+                \() ->
+                    Games.seed
+                        |> Games.createScene (seededGameId 0) (validTitle "The Ossuary")
+                        |> seededGameOf 0
+                        |> Maybe.andThen Games.activeScene
+                        |> Maybe.map sceneTitle
+                        |> Expect.equal (Just "Hall of Echoes")
+            , Test.test "allows a title another Scene of the Game already has, as a distinct Scene" <|
+                \() ->
+                    let
+                        sceneList : List Scene
+                        sceneList =
+                            Games.seed
+                                |> Games.createScene (seededGameId 1) (validTitle "The Square")
+                                |> seededGameOf 1
+                                |> Maybe.map Games.scenes
+                                |> Maybe.withDefault []
+                    in
+                    ( List.map sceneTitle sceneList, sceneList |> List.map (Games.sceneId >> Games.sceneIdToString) |> distinctStrings )
+                        |> Expect.equal ( [ "The Square", "The Pickpocket's Alley", "The Square" ], 3 )
+            , Test.test "trims its title" <|
+                \() ->
+                    Title.fromString "  The Town Hall "
+                        |> Maybe.andThen (\valid -> Games.createScene (seededGameId 1) valid Games.seed |> seededSceneTitlesOf 1)
+                        |> Expect.equal (Just [ "The Square", "The Pickpocket's Alley", "The Town Hall" ])
+            , Test.test "leaves the other Games' Scenes alone" <|
+                \() ->
+                    Games.seed
+                        |> Games.createScene (seededGameId 1) (validTitle "The Town Hall")
+                        |> seededSceneTitlesOf 0
+                        |> Expect.equal (Just [ "The Drowned Gate", "Hall of Echoes", "The Crypt Heart" ])
+            , Test.test "in an unknown Game changes nothing" <|
+                \() ->
+                    Games.seed
+                        |> Games.createScene (Games.gameIdFromString "no-such-game") (validTitle "The Town Hall")
+                        |> Expect.equal Games.seed
+            ]
+        , Test.describe "renaming a Scene"
+            [ Test.test "changes its title and keeps its place" <|
+                \() ->
+                    Games.seed
+                        |> Games.renameScene (seededGameId 0) (seededSceneId 0 0) (validTitle "The Flooded Gate")
+                        |> seededSceneTitlesOf 0
+                        |> Expect.equal (Just [ "The Flooded Gate", "Hall of Echoes", "The Crypt Heart" ])
+            , Test.test "of the Active Scene changes the Active Scene's title" <|
+                \() ->
+                    Games.seed
+                        |> Games.renameScene (seededGameId 0) (seededSceneId 0 1) (validTitle "Hall of Whispers")
+                        |> seededGameOf 0
+                        |> Maybe.andThen Games.activeScene
+                        |> Maybe.map sceneTitle
+                        |> Expect.equal (Just "Hall of Whispers")
+            , Test.test "in an unknown Game changes nothing" <|
+                \() ->
+                    Games.seed
+                        |> Games.renameScene (Games.gameIdFromString "no-such-game") (seededSceneId 0 0) (validTitle "The Flooded Gate")
+                        |> Expect.equal Games.seed
+            , Test.test "with an unknown Scene changes nothing" <|
+                \() ->
+                    Games.seed
+                        |> Games.renameScene (seededGameId 0) (Games.sceneIdFromString "no-such-scene") (validTitle "The Flooded Gate")
+                        |> Expect.equal Games.seed
+            , Test.test "with a Scene of another Game changes nothing" <|
+                \() ->
+                    Games.seed
+                        |> Games.renameScene (seededGameId 0) (seededSceneId 1 0) (validTitle "The Flooded Gate")
+                        |> Expect.equal Games.seed
+            ]
+        , Test.describe "deleting a Scene"
+            [ Test.test "removes it from its Game's Scenes" <|
+                \() ->
+                    Games.seed
+                        |> Games.deleteScene (seededGameId 0) (seededSceneId 0 0)
+                        |> seededSceneTitlesOf 0
+                        |> Expect.equal (Just [ "Hall of Echoes", "The Crypt Heart" ])
+            , Test.test "keeps the Active Scene when deleting another Scene" <|
+                \() ->
+                    Games.seed
+                        |> Games.deleteScene (seededGameId 0) (seededSceneId 0 2)
+                        |> seededGameOf 0
+                        |> Maybe.andThen Games.activeScene
+                        |> Maybe.map sceneTitle
+                        |> Expect.equal (Just "Hall of Echoes")
+            , Test.test "of the Active Scene leaves its Game with no Active Scene" <|
+                \() ->
+                    Games.seed
+                        |> Games.deleteScene (seededGameId 0) (seededSceneId 0 1)
+                        |> seededGameOf 0
+                        |> Maybe.map Games.activeScene
+                        |> Expect.equal (Just Nothing)
+            , Test.test "of the Active Scene, then creating a Scene, still leaves no Active Scene" <|
+                \() ->
+                    Games.seed
+                        |> Games.deleteScene (seededGameId 0) (seededSceneId 0 1)
+                        |> Games.createScene (seededGameId 0) (validTitle "Hall of Echoes")
+                        |> seededGameOf 0
+                        |> Maybe.map Games.activeScene
+                        |> Expect.equal (Just Nothing)
+            , Test.test "of every Scene leaves its Game with none" <|
+                \() ->
+                    Games.seed
+                        |> Games.deleteScene (seededGameId 1) (seededSceneId 1 0)
+                        |> Games.deleteScene (seededGameId 1) (seededSceneId 1 1)
+                        |> seededSceneTitlesOf 1
+                        |> Expect.equal (Just [])
+            , Test.test "leaves the other Games' Scenes alone" <|
+                \() ->
+                    Games.seed
+                        |> Games.deleteScene (seededGameId 1) (seededSceneId 1 0)
+                        |> seededSceneTitlesOf 0
+                        |> Expect.equal (Just [ "The Drowned Gate", "Hall of Echoes", "The Crypt Heart" ])
+            , Test.test "in an unknown Game changes nothing" <|
+                \() ->
+                    Games.seed
+                        |> Games.deleteScene (Games.gameIdFromString "no-such-game") (seededSceneId 0 0)
+                        |> Expect.equal Games.seed
+            , Test.test "with an unknown Scene changes nothing" <|
+                \() ->
+                    Games.seed
+                        |> Games.deleteScene (seededGameId 0) (Games.sceneIdFromString "no-such-scene")
+                        |> Expect.equal Games.seed
+            , Test.test "with a Scene of another Game changes nothing" <|
+                \() ->
+                    Games.seed
+                        |> Games.deleteScene (seededGameId 0) (seededSceneId 1 0)
+                        |> Expect.equal Games.seed
+            ]
         , Test.describe "making a Scene active"
             [ Test.test "replaces the previous Active Scene" <|
                 \() ->
@@ -274,6 +423,12 @@ distinctCount : List Games.GameId -> Int
 distinctCount ids =
     ids
         |> List.map Games.gameIdToString
+        |> distinctStrings
+
+
+distinctStrings : List String -> Int
+distinctStrings ids =
+    ids
         |> List.foldl
             (\id seen ->
                 if List.member id seen then
@@ -293,6 +448,17 @@ seededGameId index =
         |> Maybe.withDefault (Games.gameIdFromString "no-such-seeded-game")
 
 
+{-| The id of the Scene at `sceneIndex` of the seeded Game at `gameIndex`.
+-}
+seededSceneId : Int -> Int -> Games.SceneId
+seededSceneId gameIndex sceneIndex =
+    seededGame gameIndex
+        |> Maybe.map Games.scenes
+        |> Maybe.andThen (List.drop sceneIndex >> List.head)
+        |> Maybe.map Games.sceneId
+        |> Maybe.withDefault (Games.sceneIdFromString "no-such-seeded-scene")
+
+
 seededGame : Int -> Maybe Game
 seededGame index =
     Games.list Games.seed
@@ -308,6 +474,14 @@ gameTitle =
 sceneTitle : Scene -> String
 sceneTitle =
     Games.sceneTitle >> Title.toString
+
+
+{-| The titles of the Scenes, in `games`, of the seeded Game at this position.
+-}
+seededSceneTitlesOf : Int -> Games -> Maybe (List String)
+seededSceneTitlesOf index games =
+    Games.get (seededGameId index) games
+        |> Maybe.map (Games.scenes >> List.map sceneTitle)
 
 
 seededGameOf : Int -> Games -> Maybe Game
