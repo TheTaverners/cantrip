@@ -106,23 +106,26 @@ view model =
             mapDocument GameListMsg (Page.GameList.view model.games model.gameList)
 
         Route.Game id ->
-            case Games.get id model.games of
-                Just game ->
-                    mapDocument (GameMsg id) (Page.Game.view game model.game)
-
-                Nothing ->
-                    Page.GameNotFound.view
+            viewGame id model.games (\game -> mapDocument (GameMsg id) (Page.Game.view game model.game))
 
         Route.Play id ->
-            case Games.get id model.games of
-                Just game ->
-                    Page.Player.view game
-
-                Nothing ->
-                    Page.GameNotFound.view
+            viewGame id model.games Page.Player.view
 
         Route.NotFound ->
             Page.NotFound.view
+
+
+{-| The view of the Game with this id, or `Page.GameNotFound` if it names no
+Game.
+-}
+viewGame : Games.GameId -> Games -> (Games.Game -> Browser.Document Msg) -> Browser.Document Msg
+viewGame id games viewFound =
+    case Games.get id games of
+        Just game ->
+            viewFound game
+
+        Nothing ->
+            Page.GameNotFound.view
 
 
 mapDocument : (a -> msg) -> Browser.Document a -> Browser.Document msg
