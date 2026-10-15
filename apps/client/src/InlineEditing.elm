@@ -180,18 +180,14 @@ update msg (State state) =
 -}
 viewCreate : { label : String, toMsg : Msg id -> msg } -> State id -> Html msg
 viewCreate { label, toMsg } (State state) =
-    Html.form [ Html.Attributes.class "inline-form", Html.Events.onSubmit (toMsg CreateSubmitted) ]
-        (Html.input
-            [ Html.Attributes.class "inline-form__field"
-            , Html.Attributes.attribute "aria-label" label
-            , Html.Attributes.placeholder label
-            , Html.Attributes.value state.create.text
-            , Html.Events.onInput (toMsg << DraftChanged)
-            ]
-            []
-            :: Html.button [ Html.Attributes.type_ "submit", Html.Attributes.class "button" ] [ Html.text "Create" ]
-            :: viewRefusal state.create.refused
-        )
+    viewForm
+        { fieldAttributes = [ Html.Attributes.attribute "aria-label" label, Html.Attributes.placeholder label ]
+        , onInput = toMsg << DraftChanged
+        , onSubmit = toMsg CreateSubmitted
+        , submitLabel = "Create"
+        , extraButtons = []
+        }
+        state.create
 
 
 {-| The contents of one item's row.
@@ -207,46 +203,81 @@ viewCreate { label, toMsg } (State state) =
 -}
 viewRow : { id : id, title : Title, content : List (Html msg), toMsg : Msg id -> msg } -> State id -> List (Html msg)
 viewRow { id, title, content, toMsg } (State state) =
-    case state.row of
+    case rowMode id state.row of
+        Renaming renaming ->
+            [ viewForm
+                { fieldAttributes = [ Html.Attributes.attribute "aria-label" "Title" ]
+                , onInput = toMsg << RenameDraftChanged
+                , onSubmit = toMsg RenameSubmitted
+                , submitLabel = "Save"
+                , extraButtons = [ actionButton (toMsg RenameCancelled) "Cancel" ]
+                }
+                renaming.draft
+            ]
+
+        ConfirmingDelete _ ->
+            content
+                ++ [ Html.span [ Html.Attributes.class "inline-confirm" ] [ Html.text "Delete?" ]
+                   , actionButton (toMsg DeleteConfirmed) "Yes"
+                   , actionButton (toMsg DeleteCancelled) "Cancel"
+                   ]
+
+        Idle ->
+            content
+                ++ [ actionButton (toMsg (RenameStarted id title)) "Rename"
+                   , actionButton (toMsg (DeleteRequested id)) "Delete"
+                   ]
+
+
+{-| What the row with this id is doing: another row's edit leaves it idle.
+-}
+rowMode : id -> Row id -> Row id
+rowMode id row =
+    case row of
         Renaming renaming ->
             if renaming.id == id then
-                [ Html.form [ Html.Attributes.class "inline-form", Html.Events.onSubmit (toMsg RenameSubmitted) ]
-                    (Html.input
-                        [ Html.Attributes.class "inline-form__field"
-                        , Html.Attributes.attribute "aria-label" "Title"
-                        , Html.Attributes.value renaming.draft.text
-                        , Html.Events.onInput (toMsg << RenameDraftChanged)
-                        ]
-                        []
-                        :: Html.button [ Html.Attributes.type_ "submit", Html.Attributes.class "button" ] [ Html.text "Save" ]
-                        :: actionButton (toMsg RenameCancelled) "Cancel"
-                        :: viewRefusal renaming.draft.refused
-                    )
-                ]
+                row
 
             else
-                content ++ idleActions toMsg id title
+                Idle
 
         ConfirmingDelete confirming ->
             if confirming == id then
-                content
-                    ++ [ Html.span [ Html.Attributes.class "inline-confirm" ] [ Html.text "Delete?" ]
-                       , actionButton (toMsg DeleteConfirmed) "Yes"
-                       , actionButton (toMsg DeleteCancelled) "Cancel"
-                       ]
+                row
 
             else
-                content ++ idleActions toMsg id title
+                Idle
 
         Idle ->
-            content ++ idleActions toMsg id title
+            Idle
 
 
-idleActions : (Msg id -> msg) -> id -> Title -> List (Html msg)
-idleActions toMsg id title =
-    [ actionButton (toMsg (RenameStarted id title)) "Rename"
-    , actionButton (toMsg (DeleteRequested id)) "Delete"
-    ]
+{-| A title field, its submit button, any `extraButtons`, then the refusal if
+the draft was refused.
+-}
+viewForm :
+    { fieldAttributes : List (Html.Attribute msg)
+    , onInput : String -> msg
+    , onSubmit : msg
+    , submitLabel : String
+    , extraButtons : List (Html msg)
+    }
+    -> TitleDraft
+    -> Html msg
+viewForm config draft =
+    Html.form [ Html.Attributes.class "inline-form", Html.Events.onSubmit config.onSubmit ]
+        (Html.input
+            (Html.Attributes.class "inline-form__field"
+                :: config.fieldAttributes
+                ++ [ Html.Attributes.value draft.text
+                   , Html.Events.onInput config.onInput
+                   ]
+            )
+            []
+            :: Html.button [ Html.Attributes.type_ "submit", Html.Attributes.class "button" ] [ Html.text config.submitLabel ]
+            :: config.extraButtons
+            ++ viewRefusal draft.refused
+        )
 
 
 {-| A button styled like the row's own actions, for an item-specific action
