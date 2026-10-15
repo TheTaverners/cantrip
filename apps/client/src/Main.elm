@@ -3,19 +3,34 @@ module Main exposing (Model, Msg, init, main, onUrlChange, onUrlRequest, update,
 import Browser
 import Browser.Navigation
 import Effect exposing (Effect)
-import Page.Home
+import Games exposing (Games)
+import Html
+import Page.Game
+import Page.GameList
+import Page.GameNotFound
 import Page.NotFound
+import Page.Player
 import Route exposing (Route)
 import Url exposing (Url)
 
 
+{-| The Games live next to the route, not inside a page, so they survive
+navigation. Page-local state (`gameList`, `game`) is reset on every route
+change.
+-}
 type alias Model =
-    { route : Route }
+    { route : Route
+    , games : Games
+    , gameList : Page.GameList.Model
+    , game : Page.Game.Model
+    }
 
 
 type Msg
     = UrlRequested Browser.UrlRequest
     | UrlChanged Url
+    | GameListMsg Page.GameList.Msg
+    | GameMsg Games.GameId Page.Game.Msg
 
 
 {-| The navigation key lives next to the model, outside of it, so that `init`,
@@ -54,7 +69,7 @@ withKey key ( model, effect ) =
 
 init : () -> Url -> () -> ( Model, Effect Msg )
 init () url () =
-    ( { route = Route.fromUrl url }, Effect.None )
+    ( { route = Route.fromUrl url, games = Games.seed, gameList = Page.GameList.init, game = Page.Game.init }, Effect.None )
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
@@ -67,17 +82,57 @@ update msg model =
             ( model, Effect.LoadUrl href )
 
         UrlChanged url ->
-            ( { model | route = Route.fromUrl url }, Effect.None )
+            ( { model | route = Route.fromUrl url, gameList = Page.GameList.init, game = Page.Game.init }, Effect.None )
+
+        GameListMsg pageMsg ->
+            let
+                ( gameList, games ) =
+                    Page.GameList.update pageMsg model.gameList model.games
+            in
+            ( { model | gameList = gameList, games = games }, Effect.None )
+
+        GameMsg id pageMsg ->
+            let
+                ( game, games ) =
+                    Page.Game.update id pageMsg model.game model.games
+            in
+            ( { model | game = game, games = games }, Effect.None )
 
 
 view : Model -> Browser.Document Msg
 view model =
     case model.route of
         Route.Home ->
-            Page.Home.view
+            mapDocument GameListMsg (Page.GameList.view model.games model.gameList)
+
+        Route.Game id ->
+            viewGame id model.games (\game -> mapDocument (GameMsg id) (Page.Game.view game model.game))
+
+        Route.Play id ->
+            viewGame id model.games Page.Player.view
 
         Route.NotFound ->
             Page.NotFound.view
+
+
+{-| The view of the Game with this id, or `Page.GameNotFound` if it names no
+Game.
+-}
+viewGame : Games.GameId -> Games -> (Games.Game -> Browser.Document Msg) -> Browser.Document Msg
+viewGame id games viewFound =
+    case Games.get id games of
+        Just game ->
+            viewFound game
+
+        Nothing ->
+            Page.GameNotFound.view
+
+
+mapDocument : (a -> msg) -> Browser.Document a -> Browser.Document msg
+mapDocument toMsg document =
+    { title = document.title
+    , body = List.map (Html.map toMsg) document.body
+    }
 
 
 onUrlRequest : Browser.UrlRequest -> Msg

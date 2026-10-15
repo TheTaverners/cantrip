@@ -174,7 +174,7 @@ reset_sandbox
 # Problems in files that aren't staged don't block a commit of clean files.
 printf 'module Ugly exposing (x)\nx   =   1\n' >apps/client/src/Ugly.elm
 printf 'export const value: any = 1;\n' >apps/client/src/bad.ts
-echo "x   =   2" >>apps/client/src/Page/Home.elm
+echo "x   =   2" >>apps/client/src/Page/NotFound.elm
 printf 'module Clean exposing (x)\n\n\nx : Int\nx =\n    1\n' >apps/client/src/Clean.elm
 printf 'export const clean = 1;\n' >apps/client/src/clean.ts
 git add apps/client/src/Clean.elm apps/client/src/clean.ts
@@ -183,7 +183,7 @@ if try_commit -m "feat(client): add clean modules"; then
 else
     fail "unstaged problems in other files don't block the commit (got: $OUTPUT)"
 fi
-expected_status=$' M apps/client/src/Page/Home.elm\n?? apps/client/src/Ugly.elm\n?? apps/client/src/bad.ts'
+expected_status=$' M apps/client/src/Page/NotFound.elm\n?? apps/client/src/Ugly.elm\n?? apps/client/src/bad.ts'
 if [[ $(git status --porcelain=v1 --untracked-files=all) == "$expected_status" ]]; then
     pass "passing commit leaves unstaged changes alone"
 else
