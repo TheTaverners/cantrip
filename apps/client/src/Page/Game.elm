@@ -11,6 +11,7 @@ import Games exposing (Game, GameId, Games, Scene, SceneId)
 import Html exposing (Html)
 import Html.Attributes
 import InlineEditing
+import Page
 import Route
 import Title
 
@@ -62,7 +63,7 @@ view game (Model editing) =
         gameTitle =
             Title.toString (Games.title game)
     in
-    { title = gameTitle ++ " · Cantrip"
+    { title = Page.documentTitle gameTitle
     , body =
         [ Html.main_ [ Html.Attributes.class "page" ]
             [ Html.a [ Html.Attributes.class "page__back", Html.Attributes.href (Route.toPath Route.Home) ] [ Html.text "← All games" ]

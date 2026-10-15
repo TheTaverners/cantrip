@@ -9,6 +9,7 @@ import Browser
 import Games exposing (Game)
 import Html
 import Html.Attributes
+import Page
 import Title
 
 
@@ -19,7 +20,7 @@ view game =
         gameTitle =
             Title.toString (Games.title game)
     in
-    { title = gameTitle ++ " · Cantrip"
+    { title = Page.documentTitle gameTitle
     , body =
         [ Html.main_ [ Html.Attributes.class "player" ]
             [ Html.p [ Html.Attributes.class "player__game" ] [ Html.text gameTitle ]
