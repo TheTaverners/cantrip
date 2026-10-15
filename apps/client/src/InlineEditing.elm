@@ -27,28 +27,51 @@ import Html.Events
 import Title exposing (Title)
 
 
-{-| The create field's draft, whether the last creation was refused, and the
-row being edited, if any.
+{-| The create field's draft and the row being edited, if any.
 -}
 type State id
     = State
-        { draft : String
-        , createRefused : Bool
+        { create : TitleDraft
         , row : Row id
         }
 
 
 type Row id
     = Idle
-    | Renaming { id : id, draft : String, refused : Bool }
+    | Renaming { id : id, draft : TitleDraft }
     | ConfirmingDelete id
+
+
+{-| A title being typed, and whether its last submission was refused.
+-}
+type alias TitleDraft =
+    { text : String
+    , refused : Bool
+    }
 
 
 {-| Nothing typed, no row being edited.
 -}
 init : State id
 init =
-    State { draft = "", createRefused = False, row = Idle }
+    State { create = typing "", row = Idle }
+
+
+typing : String -> TitleDraft
+typing text =
+    { text = text, refused = False }
+
+
+{-| The valid title, or the draft marked as refused.
+-}
+submitDraft : TitleDraft -> Result TitleDraft Title
+submitDraft draft =
+    case Title.fromString draft.text of
+        Just title ->
+            Ok title
+
+        Nothing ->
+            Err { draft | refused = True }
 
 
 type Msg id
@@ -100,24 +123,24 @@ apply { create, rename, delete } request items =
 update : Msg id -> State id -> ( State id, Maybe (Request id) )
 update msg (State state) =
     case msg of
-        DraftChanged draft ->
-            ( State { state | draft = draft, createRefused = False }, Nothing )
+        DraftChanged text ->
+            ( State { state | create = typing text }, Nothing )
 
         CreateSubmitted ->
-            case Title.fromString state.draft of
-                Just title ->
-                    ( State { state | draft = "", createRefused = False }, Just (Create title) )
+            case submitDraft state.create of
+                Ok title ->
+                    ( State { state | create = typing "" }, Just (Create title) )
 
-                Nothing ->
-                    ( State { state | createRefused = True }, Nothing )
+                Err refused ->
+                    ( State { state | create = refused }, Nothing )
 
         RenameStarted id title ->
-            ( State { state | row = Renaming { id = id, draft = Title.toString title, refused = False } }, Nothing )
+            ( State { state | row = Renaming { id = id, draft = typing (Title.toString title) } }, Nothing )
 
-        RenameDraftChanged draft ->
+        RenameDraftChanged text ->
             case state.row of
                 Renaming renaming ->
-                    ( State { state | row = Renaming { renaming | draft = draft, refused = False } }, Nothing )
+                    ( State { state | row = Renaming { renaming | draft = typing text } }, Nothing )
 
                 _ ->
                     ( State state, Nothing )
@@ -125,12 +148,12 @@ update msg (State state) =
         RenameSubmitted ->
             case state.row of
                 Renaming renaming ->
-                    case Title.fromString renaming.draft of
-                        Just title ->
+                    case submitDraft renaming.draft of
+                        Ok title ->
                             ( State { state | row = Idle }, Just (Rename renaming.id title) )
 
-                        Nothing ->
-                            ( State { state | row = Renaming { renaming | refused = True } }, Nothing )
+                        Err refused ->
+                            ( State { state | row = Renaming { renaming | draft = refused } }, Nothing )
 
                 _ ->
                     ( State state, Nothing )
@@ -162,12 +185,12 @@ viewCreate { label, toMsg } (State state) =
             [ Html.Attributes.class "inline-form__field"
             , Html.Attributes.attribute "aria-label" label
             , Html.Attributes.placeholder label
-            , Html.Attributes.value state.draft
+            , Html.Attributes.value state.create.text
             , Html.Events.onInput (toMsg << DraftChanged)
             ]
             []
             :: Html.button [ Html.Attributes.type_ "submit", Html.Attributes.class "button" ] [ Html.text "Create" ]
-            :: viewRefusal state.createRefused
+            :: viewRefusal state.create.refused
         )
 
 
@@ -191,13 +214,13 @@ viewRow { id, title, content, toMsg } (State state) =
                     (Html.input
                         [ Html.Attributes.class "inline-form__field"
                         , Html.Attributes.attribute "aria-label" "Title"
-                        , Html.Attributes.value renaming.draft
+                        , Html.Attributes.value renaming.draft.text
                         , Html.Events.onInput (toMsg << RenameDraftChanged)
                         ]
                         []
                         :: Html.button [ Html.Attributes.type_ "submit", Html.Attributes.class "button" ] [ Html.text "Save" ]
                         :: actionButton (toMsg RenameCancelled) "Cancel"
-                        :: viewRefusal renaming.refused
+                        :: viewRefusal renaming.draft.refused
                     )
                 ]
 
