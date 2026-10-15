@@ -9,6 +9,7 @@ The Cantrip web client: an Elm 0.19.3 application built with [Vite](https://vite
 - `src/style.css`: the global stylesheet. Theme tokens are CSS custom properties on `:root`; Elm views reference the class names.
 - `src/Main.elm`: the Elm entry point (see Architecture).
 - `src/Route.elm`, `src/Effect.elm`: routing and side effects (see Architecture).
+- `src/Games.elm`, `src/Title.elm`: the domain (see Architecture).
 - `src/Page/`: one Elm module per page.
 - `tests/`: Elm unit and program tests, run by elm-test-rs.
 - `src/elm.d.ts`: hand-written types for the Elm entry point, so the bootstrap type-checks. Update it when `Main` gains flags or ports.
@@ -20,6 +21,7 @@ The Cantrip web client: an Elm 0.19.3 application built with [Vite](https://vite
 
 - **`Main`** is a `Browser.application`: it owns the URL. Clicking an internal link asks for a `PushUrl` effect; the URL change that follows is parsed by `Route` and decides which page `view` renders. External links ask for `LoadUrl`. Back and forward fire the same URL change, so they need no extra code.
 - **`Route`** is the single place that knows URLs. `Route.fromUrl` parses a `Url` into a `Route` (`Home | NotFound`); unknown paths become `NotFound`. `Route.toPath` turns a `Route` back into a path; use it for every `href`. To add a page, add a constructor, a parser branch and a `toPath` branch.
+- **`Games`** owns the collection of Games and their Scenes, behind opaque types so the rules in `GLOSSARY.md` can't be bypassed. It starts from `Games.seed` (in memory, reset on reload) and generates the opaque `GameId`s and `SceneId`s, which convert to and from strings for URLs. **`Title`** is a valid title: built with `Title.fromString`, which trims and refuses empty input. `Main` keeps the collection in its model, next to the route, so it survives navigation.
 - **Pages** live in `src/Page/`, one module per page. Each `view` returns a `Browser.Document`: its own document title and its body.
 - **`Effect`** is the Effect pattern. `init` and `update` return `( Model, Effect Msg )`, never a `Cmd`. `Effect` is a custom type listing every side effect the app may request (`None`, `Batch`, `PushUrl`, `LoadUrl`). Only `Main` turns an effect into a real `Cmd`, with `Effect.toCmd` and the navigation key, which `Main` keeps next to the model rather than in it. Tests turn effects into elm-program-test simulated effects with `tests/SimulatedEffects.elm`; it lives under `tests/` because elm-program-test is a test-only dependency. Add a branch to both functions whenever you add a constructor.
 - **TypeScript bootstrap**: `src/main.ts` imports the global stylesheet and mounts `Elm.Main` on `#app`. There are no flags or ports yet.
@@ -27,8 +29,9 @@ The Cantrip web client: an Elm 0.19.3 application built with [Vite](https://vite
 ## Tests
 
 - `tests/RouteTest.elm` tests the `Route` interface: a fuzz test that route → path → route round-trips, and a check that unknown paths parse to `NotFound`.
+- `tests/TitleTest.elm` and `tests/GamesTest.elm` test the domain through its public interface: title trimming and refusal, the seed, lookup by id, and ids round-tripping through strings.
 - `tests/MainTest.elm` runs the whole program with [elm-program-test](https://package.elm-lang.org/packages/avh4/elm-program-test/latest/), starting from a URL and asserting on what the page shows. elm-program-test has no title assertion, so `expectTitle` reads the title from `Main.view`.
-- `e2e/smoke.spec.ts` is the browser smoke test: the production bundle, served by `vite preview`, shows "Hello, World" under the title "Cantrip" in Chromium and WebKit. `playwright.config.ts` builds and starts the server itself. Single test: `npx playwright test e2e/smoke.spec.ts`, with `-g "<title>"` or `--project=webkit` to narrow it; reports land in `playwright-report/`.
+- `e2e/smoke.spec.ts` is the browser smoke test: the production bundle, served by `vite preview`, lists the seeded Games under the title "Cantrip" in Chromium and WebKit. `playwright.config.ts` builds and starts the server itself. Single test: `npx playwright test e2e/smoke.spec.ts`, with `-g "<title>"` or `--project=webkit` to narrow it; reports land in `playwright-report/`.
 - Test dependencies are listed by hand in the `test-dependencies` block of `elm.json` (elm-json does not work with Elm 0.19.3).
 
 ## Scripts

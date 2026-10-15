@@ -43,3 +43,16 @@ a {
   margin: 0;
   font-size: var(--font-size-title);
 }
+
+/* Game list. */
+.game-list {
+  margin: var(--space-l) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.game-list__item {
+  margin-bottom: var(--space-m);
+  padding: var(--space-m);
+  background: var(--color-surface);
+}

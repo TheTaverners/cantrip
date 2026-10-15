@@ -1,8 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-test("home page greets the table", async ({ page }) => {
+test("home page lists the Games", async ({ page }) => {
   await page.goto("/");
 
   await expect(page).toHaveTitle("Cantrip");
-  await expect(page.getByText("Hello, World")).toBeVisible();
+  await expect(page.getByRole("listitem")).toHaveText([
+    "The Sunken Crypt",
+    "Market Day in Brindle",
+  ]);
 });

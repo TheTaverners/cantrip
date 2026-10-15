@@ -3,14 +3,20 @@ module Main exposing (Model, Msg, init, main, onUrlChange, onUrlRequest, update,
 import Browser
 import Browser.Navigation
 import Effect exposing (Effect)
-import Page.Home
+import Games exposing (Games)
+import Page.GameList
 import Page.NotFound
 import Route exposing (Route)
 import Url exposing (Url)
 
 
+{-| The Games live next to the route, not inside a page, so they survive
+navigation.
+-}
 type alias Model =
-    { route : Route }
+    { route : Route
+    , games : Games
+    }
 
 
 type Msg
@@ -54,7 +60,7 @@ withKey key ( model, effect ) =
 
 init : () -> Url -> () -> ( Model, Effect Msg )
 init () url () =
-    ( { route = Route.fromUrl url }, Effect.None )
+    ( { route = Route.fromUrl url, games = Games.seed }, Effect.None )
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
@@ -74,7 +80,7 @@ view : Model -> Browser.Document Msg
 view model =
     case model.route of
         Route.Home ->
-            Page.Home.view
+            Page.GameList.view model.games
 
         Route.NotFound ->
             Page.NotFound.view
