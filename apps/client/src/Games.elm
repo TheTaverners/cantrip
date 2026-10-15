@@ -207,7 +207,7 @@ createGame gameTitle (Games collection) =
 
 renameGame : GameId -> Title -> Games -> Games
 renameGame id newTitle (Games collection) =
-    Games { collection | games = updateGame id (\game -> { game | title = newTitle }) collection.games }
+    Games { collection | games = updateById id (\game -> { game | title = newTitle }) collection.games }
 
 
 {-| Remove a Game and its Scenes. Its id is never handed out again, so it keeps
@@ -280,7 +280,7 @@ makeActive targetGameId targetSceneId (Games collection) =
     Games
         { collection
             | games =
-                updateGame targetGameId
+                updateById targetGameId
                     (\game ->
                         if List.any (\scene -> scene.id == targetSceneId) game.scenes then
                             { game | activeScene = Just targetSceneId }
@@ -301,7 +301,7 @@ createScene targetGameId sceneTitle_ (Games collection) =
         Games
             { nextId = collection.nextId + 1
             , games =
-                updateGame targetGameId
+                updateById targetGameId
                     (\game -> { game | scenes = game.scenes ++ [ newScene collection.nextId sceneTitle_ ] })
                     collection.games
             }
@@ -315,19 +315,11 @@ renameScene targetGameId targetSceneId newTitle (Games collection) =
     Games
         { collection
             | games =
-                updateGame targetGameId
+                updateById targetGameId
                     (\game ->
                         { game
                             | scenes =
-                                List.map
-                                    (\scene ->
-                                        if scene.id == targetSceneId then
-                                            { scene | title = newTitle }
-
-                                        else
-                                            scene
-                                    )
-                                    game.scenes
+                                updateById targetSceneId (\scene -> { scene | title = newTitle }) game.scenes
                         }
                     )
                     collection.games
@@ -342,7 +334,7 @@ deleteScene targetGameId targetSceneId (Games collection) =
     Games
         { collection
             | games =
-                updateGame targetGameId
+                updateById targetGameId
                     (\game ->
                         { game
                             | scenes = List.filter (\scene -> scene.id /= targetSceneId) game.scenes
@@ -358,15 +350,17 @@ deleteScene targetGameId targetSceneId (Games collection) =
         }
 
 
-updateGame : GameId -> (GameData -> GameData) -> List GameData -> List GameData
-updateGame id change =
+{-| Change the item with this id, leaving the others alone.
+-}
+updateById : id -> ({ r | id : id } -> { r | id : id }) -> List { r | id : id } -> List { r | id : id }
+updateById id change =
     List.map
-        (\game ->
-            if game.id == id then
-                change game
+        (\item ->
+            if item.id == id then
+                change item
 
             else
-                game
+                item
         )
 
 
