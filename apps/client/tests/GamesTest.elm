@@ -302,6 +302,24 @@ suite =
                         |> Games.deleteScene (seededGameId 0) (seededSceneId 1 0)
                         |> Expect.equal Games.seed
             ]
+        , Test.describe "telling whether a Scene is active"
+            [ Test.test "is true only for the Active Scene" <|
+                \() ->
+                    seededGame 0
+                        |> Maybe.map (\game -> List.map (Games.isActive game) (Games.scenes game))
+                        |> Expect.equal (Just [ False, True, False ])
+            , Test.test "is false for every Scene of a Game without an Active Scene" <|
+                \() ->
+                    seededGame 1
+                        |> Maybe.map (\game -> List.map (Games.isActive game) (Games.scenes game))
+                        |> Expect.equal (Just [ False, False ])
+            , Test.test "is false for a Scene of another Game" <|
+                \() ->
+                    Maybe.map2 Games.isActive
+                        (seededGame 1)
+                        (seededGame 0 |> Maybe.andThen Games.activeScene)
+                        |> Expect.equal (Just False)
+            ]
         , Test.describe "making a Scene active"
             [ Test.test "replaces the previous Active Scene" <|
                 \() ->

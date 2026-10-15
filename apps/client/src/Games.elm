@@ -1,7 +1,7 @@
 module Games exposing
     ( Games, seed, list, get
     , createGame, renameGame, deleteGame
-    , Game, gameId, title, scenes, activeScene
+    , Game, gameId, title, scenes, activeScene, isActive
     , Scene, sceneId, sceneTitle
     , GameId, gameIdToString, gameIdFromString
     , SceneId, sceneIdToString, sceneIdFromString
@@ -29,7 +29,7 @@ unknown id leaves the collection unchanged.
 
 # Game
 
-@docs Game, gameId, title, scenes, activeScene
+@docs Game, gameId, title, scenes, activeScene, isActive
 
 
 # Scene
@@ -127,7 +127,13 @@ seed =
 
 type alias SeedGame =
     { title : String
-    , scenes : List { title : String, active : Bool }
+    , scenes : List SeedScene
+    }
+
+
+type alias SeedScene =
+    { title : String
+    , active : Bool
     }
 
 
@@ -136,27 +142,32 @@ seedGame spec (Games collection) =
     case Title.fromString spec.title of
         Just gameTitle ->
             let
-                ( sceneData, nextId ) =
-                    List.foldl seedScene ( { id = GameId (String.fromInt collection.nextId), title = gameTitle, scenes = [], activeScene = Nothing }, collection.nextId + 1 ) spec.scenes
+                ( seededGame, nextId ) =
+                    List.foldl seedScene ( newGame collection.nextId gameTitle, collection.nextId + 1 ) spec.scenes
             in
             Games
                 { nextId = nextId
-                , games = collection.games ++ [ sceneData ]
+                , games = collection.games ++ [ seededGame ]
                 }
 
         Nothing ->
             Games collection
 
 
-seedScene : { title : String, active : Bool } -> ( GameData, Int ) -> ( GameData, Int )
+seedScene : SeedScene -> ( GameData, Int ) -> ( GameData, Int )
 seedScene spec ( game, nextId ) =
     case Title.fromString spec.title of
         Just sceneTitle_ ->
+            let
+                scene : SceneData
+                scene =
+                    newScene nextId sceneTitle_
+            in
             ( { game
-                | scenes = game.scenes ++ [ { id = SceneId (String.fromInt nextId), title = sceneTitle_ } ]
+                | scenes = game.scenes ++ [ scene ]
                 , activeScene =
                     if spec.active then
-                        Just (SceneId (String.fromInt nextId))
+                        Just scene.id
 
                     else
                         game.activeScene
@@ -189,32 +200,13 @@ createGame : Title -> Games -> Games
 createGame gameTitle (Games collection) =
     Games
         { nextId = collection.nextId + 1
-        , games =
-            collection.games
-                ++ [ { id = GameId (String.fromInt collection.nextId)
-                     , title = gameTitle
-                     , scenes = []
-                     , activeScene = Nothing
-                     }
-                   ]
+        , games = collection.games ++ [ newGame collection.nextId gameTitle ]
         }
 
 
 renameGame : GameId -> Title -> Games -> Games
 renameGame id newTitle (Games collection) =
-    Games
-        { collection
-            | games =
-                List.map
-                    (\game ->
-                        if game.id == id then
-                            { game | title = newTitle }
-
-                        else
-                            game
-                    )
-                    collection.games
-        }
+    Games { collection | games = updateGame id (\game -> { game | title = newTitle }) collection.games }
 
 
 {-| Remove a Game and its Scenes. Its id is never handed out again, so it keeps
@@ -247,6 +239,14 @@ activeScene (Game game) =
     game.activeScene
         |> Maybe.andThen (\id -> List.filter (\scene -> scene.id == id) game.scenes |> List.head)
         |> Maybe.map Scene
+
+
+{-| Whether this Scene is the Game's Active Scene. A Scene of another Game
+never is.
+-}
+isActive : Game -> Scene -> Bool
+isActive (Game game) (Scene scene) =
+    game.activeScene == Just scene.id
 
 
 sceneId : Scene -> SceneId
@@ -287,14 +287,14 @@ sceneIdFromString =
 An unknown Game, or a Scene that isn't one of the Game's, changes nothing.
 -}
 makeActive : GameId -> SceneId -> Games -> Games
-makeActive id activeId (Games collection) =
+makeActive targetGameId targetSceneId (Games collection) =
     Games
         { collection
             | games =
-                List.map
+                updateGame targetGameId
                     (\game ->
-                        if game.id == id && List.any (\scene -> scene.id == activeId) game.scenes then
-                            { game | activeScene = Just activeId }
+                        if List.any (\scene -> scene.id == targetSceneId) game.scenes then
+                            { game | activeScene = Just targetSceneId }
 
                         else
                             game
@@ -307,13 +307,13 @@ makeActive id activeId (Games collection) =
 Scene on its own, even when the Game has none.
 -}
 createScene : GameId -> Title -> Games -> Games
-createScene id sceneTitle_ (Games collection) =
-    if List.any (\game -> game.id == id) collection.games then
+createScene targetGameId sceneTitle_ (Games collection) =
+    if List.any (\game -> game.id == targetGameId) collection.games then
         Games
             { nextId = collection.nextId + 1
             , games =
-                updateGame id
-                    (\game -> { game | scenes = game.scenes ++ [ { id = SceneId (String.fromInt collection.nextId), title = sceneTitle_ } ] })
+                updateGame targetGameId
+                    (\game -> { game | scenes = game.scenes ++ [ newScene collection.nextId sceneTitle_ ] })
                     collection.games
             }
 
@@ -322,17 +322,17 @@ createScene id sceneTitle_ (Games collection) =
 
 
 renameScene : GameId -> SceneId -> Title -> Games -> Games
-renameScene id renamedId newTitle (Games collection) =
+renameScene targetGameId targetSceneId newTitle (Games collection) =
     Games
         { collection
             | games =
-                updateGame id
+                updateGame targetGameId
                     (\game ->
                         { game
                             | scenes =
                                 List.map
                                     (\scene ->
-                                        if scene.id == renamedId then
+                                        if scene.id == targetSceneId then
                                             { scene | title = newTitle }
 
                                         else
@@ -349,16 +349,16 @@ renameScene id renamedId newTitle (Games collection) =
 with no Active Scene.
 -}
 deleteScene : GameId -> SceneId -> Games -> Games
-deleteScene id deletedId (Games collection) =
+deleteScene targetGameId targetSceneId (Games collection) =
     Games
         { collection
             | games =
-                updateGame id
+                updateGame targetGameId
                     (\game ->
                         { game
-                            | scenes = List.filter (\scene -> scene.id /= deletedId) game.scenes
+                            | scenes = List.filter (\scene -> scene.id /= targetSceneId) game.scenes
                             , activeScene =
-                                if game.activeScene == Just deletedId then
+                                if game.activeScene == Just targetSceneId then
                                     Nothing
 
                                 else
@@ -379,3 +379,23 @@ updateGame id change =
             else
                 game
         )
+
+
+{-| A Game with no Scenes, its id generated from the collection's counter.
+-}
+newGame : Int -> Title -> GameData
+newGame nextId gameTitle =
+    { id = GameId (String.fromInt nextId)
+    , title = gameTitle
+    , scenes = []
+    , activeScene = Nothing
+    }
+
+
+{-| A Scene, its id generated from the collection's counter.
+-}
+newScene : Int -> Title -> SceneData
+newScene nextId sceneTitle_ =
+    { id = SceneId (String.fromInt nextId)
+    , title = sceneTitle_
+    }
