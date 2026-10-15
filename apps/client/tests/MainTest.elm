@@ -268,6 +268,14 @@ deletingAGame =
                 |> ProgramTest.routeChange (TestUrl.base ++ seededGamePath 0)
                 |> ProgramTest.ensureViewHas [ Test.Html.Selector.text "Game not found" ]
                 |> expectTitle "Game not found · Cantrip"
+    , Test.test "makes its player view show \"Game not found\"" <|
+        \() ->
+            start "/"
+                |> withinGameRow 0 (ProgramTest.clickButton "Delete")
+                |> ProgramTest.clickButton "Yes"
+                |> ProgramTest.routeChange (TestUrl.base ++ seededPlayerPath 0)
+                |> ProgramTest.ensureViewHas [ Test.Html.Selector.text "Game not found" ]
+                |> expectTitle "Game not found · Cantrip"
     , Test.test "of every Game shows \"No games yet\"" <|
         \() ->
             start "/"
