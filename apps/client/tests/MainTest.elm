@@ -231,6 +231,15 @@ renamingAGame =
                 |> ProgramTest.ensureViewHas [ Test.Html.Selector.text "A title can't be empty." ]
                 |> ProgramTest.clickButton "Cancel"
                 |> ProgramTest.expectView (expectRowTitles [ "The Sunken Crypt", "Market Day in Brindle" ])
+    , Test.test "to a empty title is refused and keeps the old title" <|
+        \() ->
+            start "/"
+                |> withinRow 0 (ProgramTest.clickButton "Rename")
+                |> ProgramTest.fillIn "" "Title" ""
+                |> ProgramTest.clickButton "Save"
+                |> ProgramTest.ensureViewHas [ Test.Html.Selector.text "A title can't be empty." ]
+                |> ProgramTest.clickButton "Cancel"
+                |> ProgramTest.expectView (expectRowTitles [ "The Sunken Crypt", "Market Day in Brindle" ])
     ]
 
 
@@ -413,6 +422,15 @@ renamingAScene =
             start (seededGamePath 0)
                 |> withinRow 0 (ProgramTest.clickButton "Rename")
                 |> ProgramTest.fillIn "" "Title" "  "
+                |> ProgramTest.clickButton "Save"
+                |> ProgramTest.ensureViewHas [ Test.Html.Selector.text "A title can't be empty." ]
+                |> ProgramTest.clickButton "Cancel"
+                |> ProgramTest.expectView (expectRowTitles [ "The Drowned Gate", "Hall of Echoes", "The Crypt Heart" ])
+    , Test.test "to a empty title is refused and keeps the old title" <|
+        \() ->
+            start (seededGamePath 0)
+                |> withinRow 0 (ProgramTest.clickButton "Rename")
+                |> ProgramTest.fillIn "" "Title" ""
                 |> ProgramTest.clickButton "Save"
                 |> ProgramTest.ensureViewHas [ Test.Html.Selector.text "A title can't be empty." ]
                 |> ProgramTest.clickButton "Cancel"
