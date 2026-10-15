@@ -13,6 +13,7 @@ import Url.Parser exposing ((</>), Parser)
 type Route
     = Home
     | Game GameId
+    | Play GameId
     | NotFound
 
 
@@ -33,6 +34,9 @@ toPath route =
         Game id ->
             Url.Builder.absolute [ "games", Url.percentEncode (Games.gameIdToString id) ] []
 
+        Play id ->
+            Url.Builder.absolute [ "play", Url.percentEncode (Games.gameIdToString id) ] []
+
         NotFound ->
             "/not-found"
 
@@ -42,6 +46,7 @@ parser =
     Url.Parser.oneOf
         [ Url.Parser.map Home Url.Parser.top
         , Url.Parser.map Game (Url.Parser.s "games" </> gameId)
+        , Url.Parser.map Play (Url.Parser.s "play" </> gameId)
         ]
 
 

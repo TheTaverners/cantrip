@@ -27,6 +27,11 @@ suite =
                 TestUrl.fromPath "/games/"
                     |> Route.fromUrl
                     |> Expect.equal Route.NotFound
+        , Test.test "a player view path without an id parses to NotFound" <|
+            \() ->
+                TestUrl.fromPath "/play"
+                    |> Route.fromUrl
+                    |> Expect.equal Route.NotFound
         ]
 
 
@@ -35,6 +40,7 @@ routeFuzzer =
     Fuzz.oneOf
         [ Fuzz.oneOfValues [ Route.Home, Route.NotFound ]
         , Fuzz.map (Games.gameIdFromString >> Route.Game) gameIdFuzzer
+        , Fuzz.map (Games.gameIdFromString >> Route.Play) gameIdFuzzer
         ]
 
 

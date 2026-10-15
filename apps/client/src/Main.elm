@@ -8,6 +8,7 @@ import Page.Game
 import Page.GameList
 import Page.GameNotFound
 import Page.NotFound
+import Page.Player
 import Route exposing (Route)
 import Url exposing (Url)
 
@@ -88,6 +89,14 @@ view model =
             case Games.get id model.games of
                 Just game ->
                     Page.Game.view game
+
+                Nothing ->
+                    Page.GameNotFound.view
+
+        Route.Play id ->
+            case Games.get id model.games of
+                Just game ->
+                    Page.Player.view game
 
                 Nothing ->
                     Page.GameNotFound.view

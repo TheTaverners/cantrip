@@ -74,6 +74,45 @@ suite =
                     |> ProgramTest.ensureViewHas [ Test.Html.Selector.text "Game not found" ]
                     |> ProgramTest.ensureViewHasNot [ Test.Html.Selector.text "Page not found" ]
                     |> expectTitle "Game not found · Cantrip"
+        , Test.test "\"Open player view\" opens the player view, which shows the Game title and the Active Scene title" <|
+            \() ->
+                start (seededGamePath 0)
+                    |> ProgramTest.clickLink "Open player view" (seededPlayerPath 0)
+                    |> ProgramTest.ensureBrowserUrl (Expect.equal (TestUrl.base ++ seededPlayerPath 0))
+                    |> ProgramTest.ensureViewHas [ Test.Html.Selector.text "The Sunken Crypt" ]
+                    |> ProgramTest.ensureViewHas [ Test.Html.Selector.tag "h1", Test.Html.Selector.containing [ Test.Html.Selector.text "Hall of Echoes" ] ]
+                    |> expectTitle "The Sunken Crypt · Cantrip"
+        , Test.test "the player view is pushed onto the history, so going back returns to the Game page" <|
+            \() ->
+                start (seededGamePath 0)
+                    |> ProgramTest.clickLink "Open player view" (seededPlayerPath 0)
+                    |> ProgramTest.ensureBrowserHistory (List.head >> Expect.equal (Just (TestUrl.base ++ seededGamePath 0)))
+                    |> ProgramTest.routeChange (TestUrl.base ++ seededGamePath 0)
+                    |> ProgramTest.ensureViewHas [ Test.Html.Selector.text "Open player view" ]
+                    |> expectTitle "The Sunken Crypt · Cantrip"
+        , Test.test "the player view of a Game without an Active Scene shows that the Players wait for the Game Master" <|
+            \() ->
+                start (seededPlayerPath 1)
+                    |> ProgramTest.ensureViewHas [ Test.Html.Selector.text "Market Day in Brindle", Test.Html.Selector.text "Waiting for the Game Master…" ]
+                    |> ProgramTest.ensureViewHasNot [ Test.Html.Selector.text "The Square" ]
+                    |> expectTitle "Market Day in Brindle · Cantrip"
+        , Test.test "the player view has no management actions and no link into Game Master mode" <|
+            \() ->
+                start (seededPlayerPath 0)
+                    |> ProgramTest.expectView
+                        (Expect.all
+                            [ Test.Html.Query.findAll [ Test.Html.Selector.tag "a" ] >> Test.Html.Query.count (Expect.equal 0)
+                            , Test.Html.Query.findAll [ Test.Html.Selector.tag "button" ] >> Test.Html.Query.count (Expect.equal 0)
+                            , Test.Html.Query.findAll [ Test.Html.Selector.tag "input" ] >> Test.Html.Query.count (Expect.equal 0)
+                            , Test.Html.Query.findAll [ Test.Html.Selector.tag "form" ] >> Test.Html.Query.count (Expect.equal 0)
+                            ]
+                        )
+        , Test.test "the player view for an unknown Game shows the Game-not-found page under its own title" <|
+            \() ->
+                start (Route.toPath (Route.Play (Games.gameIdFromString "no-such-game")))
+                    |> ProgramTest.ensureViewHas [ Test.Html.Selector.text "Game not found" ]
+                    |> ProgramTest.ensureViewHasNot [ Test.Html.Selector.text "Page not found" ]
+                    |> expectTitle "Game not found · Cantrip"
         , Test.test "an unknown URL shows the not-found page under its own title" <|
             \() ->
                 start "/no/such/page"
@@ -105,6 +144,18 @@ seededGamePath index =
         |> List.drop index
         |> List.head
         |> Maybe.map (Games.gameId >> Route.Game >> Route.toPath)
+        |> Maybe.withDefault "/no-such-seeded-game"
+
+
+{-| The player view path of the seeded Game at this position in the Game
+list.
+-}
+seededPlayerPath : Int -> String
+seededPlayerPath index =
+    Games.list Games.seed
+        |> List.drop index
+        |> List.head
+        |> Maybe.map (Games.gameId >> Route.Play >> Route.toPath)
         |> Maybe.withDefault "/no-such-seeded-game"
 
 
