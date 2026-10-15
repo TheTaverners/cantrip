@@ -10,7 +10,6 @@ import Browser
 import Games exposing (Game, GameId, Games, Scene, SceneId)
 import Html exposing (Html)
 import Html.Attributes
-import Html.Events
 import InlineEditing
 import Route
 import Title
@@ -43,18 +42,13 @@ update id msg (Model editing) games =
                     InlineEditing.update editingMsg editing
             in
             ( Model newEditing
-            , case request of
-                Just (InlineEditing.Create title) ->
-                    Games.createScene id title games
-
-                Just (InlineEditing.Rename sceneId title) ->
-                    Games.renameScene id sceneId title games
-
-                Just (InlineEditing.Delete sceneId) ->
-                    Games.deleteScene id sceneId games
-
-                Nothing ->
-                    games
+            , InlineEditing.apply
+                { create = Games.createScene id
+                , rename = Games.renameScene id
+                , delete = Games.deleteScene id
+                }
+                request
+                games
             )
 
         MakeActiveClicked sceneId ->
@@ -81,31 +75,25 @@ view game (Model editing) =
 
                 sceneList ->
                     Html.ul [ Html.Attributes.class "scene-list" ]
-                        (List.map (viewScene editing (Maybe.map Games.sceneId (Games.activeScene game))) sceneList)
+                        (List.map (viewScene editing game) sceneList)
             ]
         ]
     }
 
 
-viewScene : InlineEditing.State SceneId -> Maybe SceneId -> Scene -> Html Msg
-viewScene editing activeSceneId scene =
+viewScene : InlineEditing.State SceneId -> Game -> Scene -> Html Msg
+viewScene editing game scene =
     Html.li [ Html.Attributes.class "scene-list__item" ]
         (InlineEditing.viewRow
             { id = Games.sceneId scene
             , title = Games.sceneTitle scene
             , content =
                 Html.span [ Html.Attributes.class "scene-list__title" ] [ Html.text (Title.toString (Games.sceneTitle scene)) ]
-                    :: (if activeSceneId == Just (Games.sceneId scene) then
+                    :: (if Games.isActive game scene then
                             [ Html.span [ Html.Attributes.class "badge" ] [ Html.text "Active" ] ]
 
                         else
-                            [ Html.button
-                                [ Html.Attributes.type_ "button"
-                                , Html.Attributes.class "scene-list__action"
-                                , Html.Events.onClick (MakeActiveClicked (Games.sceneId scene))
-                                ]
-                                [ Html.text "Make active" ]
-                            ]
+                            [ InlineEditing.actionButton (MakeActiveClicked (Games.sceneId scene)) "Make active" ]
                        )
             , toMsg = Editing
             }

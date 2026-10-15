@@ -1,7 +1,7 @@
 module InlineEditing exposing
     ( State, init
-    , Msg, update, Request(..)
-    , viewCreate, viewRow
+    , Msg, update, Request, apply
+    , viewCreate, viewRow, actionButton
     )
 
 {-| Inline editing of a list of titled items, such as Games or Scenes: a title
@@ -16,8 +16,8 @@ At most one row is being renamed or awaiting confirmation at a time.
 The state is page-local: reset it with `init` when the route changes.
 
 @docs State, init
-@docs Msg, update, Request
-@docs viewCreate, viewRow
+@docs Msg, update, Request, apply
+@docs viewCreate, viewRow, actionButton
 
 -}
 
@@ -63,12 +63,38 @@ type Msg id
     | DeleteCancelled
 
 
-{-| A valid change for the page to apply to its items.
+{-| A valid change for the page to apply to its items, with `apply`.
 -}
 type Request id
     = Create Title
     | Rename id Title
     | Delete id
+
+
+{-| Apply the request `update` returned, if any, to the page's items with the
+matching function.
+-}
+apply :
+    { create : Title -> items -> items
+    , rename : id -> Title -> items -> items
+    , delete : id -> items -> items
+    }
+    -> Maybe (Request id)
+    -> items
+    -> items
+apply { create, rename, delete } request items =
+    case request of
+        Just (Create title) ->
+            create title items
+
+        Just (Rename id title) ->
+            rename id title items
+
+        Just (Delete id) ->
+            delete id items
+
+        Nothing ->
+            items
 
 
 update : Msg id -> State id -> ( State id, Maybe (Request id) )
@@ -200,6 +226,9 @@ idleActions toMsg id title =
     ]
 
 
+{-| A button styled like the row's own actions, for an item-specific action
+in a row's `content`.
+-}
 actionButton : msg -> String -> Html msg
 actionButton msg label =
     Html.button

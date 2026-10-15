@@ -35,18 +35,13 @@ update (Editing msg) (Model editing) games =
             InlineEditing.update msg editing
     in
     ( Model newEditing
-    , case request of
-        Just (InlineEditing.Create title) ->
-            Games.createGame title games
-
-        Just (InlineEditing.Rename id title) ->
-            Games.renameGame id title games
-
-        Just (InlineEditing.Delete id) ->
-            Games.deleteGame id games
-
-        Nothing ->
-            games
+    , InlineEditing.apply
+        { create = Games.createGame
+        , rename = Games.renameGame
+        , delete = Games.deleteGame
+        }
+        request
+        games
     )
 
 
