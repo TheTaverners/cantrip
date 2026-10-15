@@ -15,12 +15,14 @@ import Url exposing (Url)
 
 
 {-| The Games live next to the route, not inside a page, so they survive
-navigation. Page-local state (`gameList`) is reset on every route change.
+navigation. Page-local state (`gameList`, `game`) is reset on every route
+change.
 -}
 type alias Model =
     { route : Route
     , games : Games
     , gameList : Page.GameList.Model
+    , game : Page.Game.Model
     }
 
 
@@ -28,7 +30,7 @@ type Msg
     = UrlRequested Browser.UrlRequest
     | UrlChanged Url
     | GameListMsg Page.GameList.Msg
-    | MakeActiveClicked Games.GameId Games.SceneId
+    | GameMsg Games.GameId Page.Game.Msg
 
 
 {-| The navigation key lives next to the model, outside of it, so that `init`,
@@ -67,7 +69,7 @@ withKey key ( model, effect ) =
 
 init : () -> Url -> () -> ( Model, Effect Msg )
 init () url () =
-    ( { route = Route.fromUrl url, games = Games.seed, gameList = Page.GameList.init }, Effect.None )
+    ( { route = Route.fromUrl url, games = Games.seed, gameList = Page.GameList.init, game = Page.Game.init }, Effect.None )
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
@@ -80,7 +82,7 @@ update msg model =
             ( model, Effect.LoadUrl href )
 
         UrlChanged url ->
-            ( { model | route = Route.fromUrl url, gameList = Page.GameList.init }, Effect.None )
+            ( { model | route = Route.fromUrl url, gameList = Page.GameList.init, game = Page.Game.init }, Effect.None )
 
         GameListMsg pageMsg ->
             let
@@ -89,8 +91,12 @@ update msg model =
             in
             ( { model | gameList = gameList, games = games }, Effect.None )
 
-        MakeActiveClicked id activeId ->
-            ( { model | games = Games.makeActive id activeId model.games }, Effect.None )
+        GameMsg id pageMsg ->
+            let
+                ( game, games ) =
+                    Page.Game.update id pageMsg model.game model.games
+            in
+            ( { model | game = game, games = games }, Effect.None )
 
 
 view : Model -> Browser.Document Msg
@@ -102,7 +108,7 @@ view model =
         Route.Game id ->
             case Games.get id model.games of
                 Just game ->
-                    Page.Game.view { onMakeActive = MakeActiveClicked id } game
+                    mapDocument (GameMsg id) (Page.Game.view game model.game)
 
                 Nothing ->
                     Page.GameNotFound.view
